@@ -7,6 +7,7 @@ This project will analyze City of Chicago crime data to explore patterns and ins
 - David Chan
 - Croix Westbrock
 - Srishti Nandal 
+- Matthew Ritland
 
 ## Data
 

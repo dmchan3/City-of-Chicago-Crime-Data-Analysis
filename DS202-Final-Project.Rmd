@@ -15,34 +15,64 @@ This project will analyze City of Chicago crime data to explore patterns and ins
 ## Data
 
 ### Description of the Dataset
-Our primary dataset comes from the City of Chicago government open data portal, containing records of reported crimes. The link to the full dataset (2001-Present) is https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-Present/ijzp-q8t2/about_data . For this project, we are using a subset of this dataset to focus on the last 5 years. CSV files for specific years, as we will be using, can be found on the site linked above by searching "Crimes - *Year*". Each record includes:
-- **Date and time** of the crime
-- **Location description** (block and street)
-- **Type of crime** (categorized into different types like theft, assault, robbery, etc.)
-- **Arrest** status
-- **Domestic** status
-- **Ward** and **Community Area**
+Our primary dataset comes from the City of Chicago government open data portal, containing records of reported crimes. The link to the full dataset (2001-Present) is https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-Present/ijzp-q8t2/about_data . For this project, we are using a subset of this dataset to focus on the last 5 years. CSV files for specific years, as we will be using, can be found on the site linked above by searching "Crimes - *Year*".
+
+### Questions to be Addressed
+* What are the most committed crimes in Chicago? Which crimes lead to the most arrests? How many crimes are domestic versus non-domestic?
+* Are there any seasonal crime patterns? Does quantity or types of crimes vary noticeably with changing of months and seasons?
+* How was Chicago crime affected by COVID-19? Is there a noticeable difference in the quantity and/or types of crimes committed during COVID-19 times versus recent "normal" times?
+* What areas of Chicago produce the most crimes? Block? District?
+* O Block is widely known as one of the most dangerous blocks in Chicago and the United States as a whole. How do O Block crime rates compare to the rest of Chicago?
+
 
 ### Initial Data Cleaning Steps
-1. **Importing the Data**: Load data for the last 4-5 years to keep the dataset manageable while preserving recent trends.
-```{r}
+```{r results='hide'}
 library(tidyverse)
-data2024_1 <- read.csv("2020_1.csv")
-data2024_1
-
 ```
 
-2. **Date and Time Processing**: Parse the date and time columns to allow for time-based analysis (e.g., crime by hour, day, month, and year).
-3. **Filtering by Location**: Extract latitude and longitude or ward/community areas to focus on specific regions or hotspots in Chicago.
-4. **Handling Missing Data**: Identify and address missing values, particularly in columns critical to our analysis (e.g., location or crime type).
-5. **Subsetting Data for Efficiency**: If initial dataset sizes cause computational slowdowns, we may start with smaller subsets and scale up to the full dataset as we optimize our code.
+While trying to load the datasets for each year, we ran into a problem where each of the files were too large for Github's 25mb file size limit. To work around this, we worked in a separate R script file to first eliminate the columns that were repetitive or not useful to our project. This narrowed our data to 12 columns from the previous 22. We then split each csv file into 2 different csv files, with the first including the first 4 columns, and the second containing the last 8. This split made each file similar in size, and more importantly, under the Github file size threshold. The code for this process for the 2024 dataset is given below as an example (with everything commented out as it will not run here)
+```{r}
+# data2024 <- read.csv("ProjectFiles/Crimes - 2024.csv")
+# c1_2024 <- data2024 %>% select(Date, Block, Primary.Type, Description)
+# c2_2024 <- data2024 %>% select(Location.Description, Arrest, Domestic, District, Ward, Year, Latitude, Longitude)
+# write.csv(c1_2024, file = "./ProjectFiles/2024_1.csv")
+# write.csv(c2_2024, file = "./ProjectFiles/2024_2.csv")
+```
 
-### Code for Data Cleaning
-```{r setup, include=FALSE}
-# Load necessary libraries
-library()
+We then merged the 2 subfiles back into one single year file to be used here.
 
-# Load the data for recent years 
+```{r}
+crimes_2020 <- merge(read.csv("2020_1.csv"), read.csv("2020_2.csv"))
+crimes_2021 <- merge(read.csv("2021_1.csv"), read.csv("2021_2.csv"))
+crimes_2022 <- merge(read.csv("2022_1.csv"), read.csv("2022_2.csv"))
+crimes_2023 <- merge(read.csv("2023_1.csv"), read.csv("2023_2.csv"))
+crimes_2024 <- merge(read.csv("2024_1.csv"), read.csv("2024_2.csv"))
+```
 
-# Initial data processing
+We then needed to combine all years into one main dataframe for analysis.
+```{r}
+crimes <- rbind(crimes_2020, crimes_2021, crimes_2022, crimes_2023, crimes_2024)
+crimes %>% count(Year)
+```
 
+Our final data cleaning step was to split the `Date` column into `Month`, `Day`, `Hour`, and `Minute`. Year is not needed from this as `Year` is already a column.
+```{r}
+# DO DATE SPLIT
+```
+
+### Variables
+* Month: The month of the incident
+* Day: The day of the incident
+* Hour: The hour of the incident 
+* Minute: The minute of the incident
+* Block: Partially redacted address which keeps the correct block
+* Primary.Type: The primary crime description
+* Description: The secondary crime description
+* Location.Description: Description of the incident location
+* Arrest: Whether an arrest was made
+* Domestic: Whether the incident was domestic
+* District: Police district where the incident occurred
+* Ward: City Council district where the incident occurred
+* Year: The year of the incident
+* Latitude: Latitude of the incident location
+* Longitude: Longitude of the incident location

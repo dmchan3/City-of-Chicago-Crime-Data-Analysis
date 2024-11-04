@@ -382,21 +382,27 @@ data portal, containing records of reported crimes. The link to the full
 dataset (2001-Present) is <a href="https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-Present/ijzp-q8t2/about_data" class="uri">https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-Present/ijzp-q8t2/about_data</a>
 . For this project, we are using a subset of this dataset to focus on
 the last 5 years. CSV files for specific years, as we will be using, can
-be found on the site linked above by searching “Crimes - <em>Year</em>”.
-Each record includes: - <strong>Date and time</strong> of the crime -
-<strong>Location description</strong> (block and street) - <strong>Type
-of crime</strong> (categorized into different types like theft, assault,
-robbery, etc.) - <strong>Arrest</strong> status -
-<strong>Domestic</strong> status - <strong>Ward</strong> and
-<strong>Community Area</strong></p>
+be found on the site linked above by searching “Crimes -
+<em>Year</em>”.</p>
+</div>
+<div id="questions-to-be-addressed" class="section level3">
+<h3>Questions to be Addressed</h3>
+<ul>
+<li>What are the most committed crimes in Chicago? Which crimes lead to
+the most arrests? How many crimes are domestic versus non-domestic?</li>
+<li>Are there any seasonal crime patterns? Does quantity or types of
+crimes vary noticeably with changing of months and seasons?</li>
+<li>How was Chicago crime affected by COVID-19? Is there a noticeable
+difference in the quantity and/or types of crimes committed during
+COVID-19 times versus recent “normal” times?</li>
+<li>What areas of Chicago produce the most crimes? Block? District?</li>
+<li>O Block is widely known as one of the most dangerous blocks in
+Chicago and the United States as a whole. How do O Block crime rates
+compare to the rest of Chicago?</li>
+</ul>
 </div>
 <div id="initial-data-cleaning-steps" class="section level3">
 <h3>Initial Data Cleaning Steps</h3>
-<ol style="list-style-type: decimal">
-<li><strong>Importing the Data</strong>: Load data for the last 4-5
-years to keep the dataset manageable while preserving recent
-trends.</li>
-</ol>
 <pre class="r"><code>library(tidyverse)</code></pre>
 <pre><code>## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
 ## ✔ dplyr     1.1.4     ✔ readr     2.1.5
@@ -408,24 +414,64 @@ trends.</li>
 ## ✖ dplyr::filter() masks stats::filter()
 ## ✖ dplyr::lag()    masks stats::lag()
 ## ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
-<pre class="r"><code>data2024_1 &lt;- read.csv(&quot;2020_1.csv&quot;)</code></pre>
-<ol start="2" style="list-style-type: decimal">
-<li><strong>Date and Time Processing</strong>: Parse the date and time
-columns to allow for time-based analysis (e.g., crime by hour, day,
-month, and year).</li>
-<li><strong>Filtering by Location</strong>: Extract latitude and
-longitude or ward/community areas to focus on specific regions or
-hotspots in Chicago.</li>
-<li><strong>Handling Missing Data</strong>: Identify and address missing
-values, particularly in columns critical to our analysis (e.g., location
-or crime type).</li>
-<li><strong>Subsetting Data for Efficiency</strong>: If initial dataset
-sizes cause computational slowdowns, we may start with smaller subsets
-and scale up to the full dataset as we optimize our code.</li>
-</ol>
+<p>While trying to load the datasets for each year, we ran into a
+problem where each of the files were too large for Github’s 25mb file
+size limit. To work around this, we worked in a separate R script file
+to first eliminate the columns that were repetitive or not useful to our
+project. This narrowed our data to 12 columns from the previous 22. We
+then split each csv file into 2 different csv files, with the first
+including the first 4 columns, and the second containing the last 8.
+This split made each file similar in size, and more importantly, under
+the Github file size threshold. The code for this process for the 2024
+dataset is given below as an example (with everything commented out as
+it will not run here)</p>
+<pre class="r"><code># data2024 &lt;- read.csv(&quot;ProjectFiles/Crimes - 2024.csv&quot;)
+# c1_2024 &lt;- data2024 %&gt;% select(Date, Block, Primary.Type, Description)
+# c2_2024 &lt;- data2024 %&gt;% select(Location.Description, Arrest, Domestic, District, Ward, Year, Latitude, Longitude)
+# write.csv(c1_2024, file = &quot;./ProjectFiles/2024_1.csv&quot;)
+# write.csv(c2_2024, file = &quot;./ProjectFiles/2024_2.csv&quot;)</code></pre>
+<p>We then merged the 2 subfiles back into one single year file to be
+used here.</p>
+<pre class="r"><code>crimes_2020 &lt;- merge(read.csv(&quot;2020_1.csv&quot;), read.csv(&quot;2020_2.csv&quot;))
+crimes_2021 &lt;- merge(read.csv(&quot;2021_1.csv&quot;), read.csv(&quot;2021_2.csv&quot;))
+crimes_2022 &lt;- merge(read.csv(&quot;2022_1.csv&quot;), read.csv(&quot;2022_2.csv&quot;))
+crimes_2023 &lt;- merge(read.csv(&quot;2023_1.csv&quot;), read.csv(&quot;2023_2.csv&quot;))
+crimes_2024 &lt;- merge(read.csv(&quot;2024_1.csv&quot;), read.csv(&quot;2024_2.csv&quot;))</code></pre>
+<p>We then needed to combine all years into one main dataframe for
+analysis.</p>
+<pre class="r"><code>crimes &lt;- rbind(crimes_2020, crimes_2021, crimes_2022, crimes_2023, crimes_2024)
+crimes %&gt;% count(Year)</code></pre>
+<pre><code>##   Year      n
+## 1 2020 212500
+## 2 2021 209363
+## 3 2022 239580
+## 4 2023 262605
+## 5 2024 209572</code></pre>
+<p>Our final data cleaning step was to split the <code>Date</code>
+column into <code>Month</code>, <code>Day</code>, <code>Hour</code>, and
+<code>Minute</code>. Year is not needed from this as <code>Year</code>
+is already a column.</p>
+<pre class="r"><code># DO DATE SPLIT</code></pre>
 </div>
-<div id="code-for-data-cleaning" class="section level3">
-<h3>Code for Data Cleaning</h3>
+<div id="variables" class="section level3">
+<h3>Variables</h3>
+<ul>
+<li>Month: The month of the incident</li>
+<li>Day: The day of the incident</li>
+<li>Hour: The hour of the incident</li>
+<li>Minute: The minute of the incident</li>
+<li>Block: Partially redacted address which keeps the correct block</li>
+<li>Primary.Type: The primary crime description</li>
+<li>Description: The secondary crime description</li>
+<li>Location.Description: Description of the incident location</li>
+<li>Arrest: Whether an arrest was made</li>
+<li>Domestic: Whether the incident was domestic</li>
+<li>District: Police district where the incident occurred</li>
+<li>Ward: City Council district where the incident occurred</li>
+<li>Year: The year of the incident</li>
+<li>Latitude: Latitude of the incident location</li>
+<li>Longitude: Longitude of the incident location</li>
+</ul>
 </div>
 </div>
 

@@ -5,17 +5,17 @@ output: html_document
 ---
 
 ## Research Topic
-This project will analyze City of Chicago crime data to explore patterns and insights over the past 4-5 years. Using this large dataset (200-300k records per year), our aim is to identify trends and examine crime intensity based on locations, times, and types of offenses. Specifically, we will explore questions such as which blocks or streets are the most dangerous, seasonal crime patterns, and how these trends have evolved.
+This project will analyze City of Chicago crime data to explore patterns and insights over the past 5 years. Using this large dataset (200-300k records per year), our aim is to identify trends and examine crime intensity based on locations, times, and types of offenses. Specifically, we will explore questions such as which blocks or streets are the most dangerous, seasonal crime patterns, and how these trends have evolved.
 
 ## Team Members
 - David Chan
-- Croix Westbrook
+- Croix Westbrock
 - Srishti Nandal 
 
 ## Data
 
 ### Description of the Dataset
-Our primary dataset comes from the City of Chicago government open data portal, containing records of reported crimes. For this project, we are considering using the data from the last 4-5 years (approximately 1 million records in total). Each record includes:
+Our primary dataset comes from the City of Chicago government open data portal, containing records of reported crimes. The link to the full dataset (2001-Present) is https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-Present/ijzp-q8t2/about_data . For this project, we are using a subset of this dataset to focus on the last 5 years. CSV files for specific years, as we will be using, can be found on the site linked above by searching "Crimes - *Year*". Each record includes:
 - **Date and time** of the crime
 - **Location description** (block and street)
 - **Type of crime** (categorized into different types like theft, assault, robbery, etc.)

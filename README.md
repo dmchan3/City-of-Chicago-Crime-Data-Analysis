@@ -54,37 +54,10 @@ crimes <- rbind(crimes_2020, crimes_2021, crimes_2022, crimes_2023, crimes_2024)
 crimes <- crimes %>% select(-X)
 ```
 
-With the format of the `Date` column we needed to split it up into `Month`, `Day`, `Hour`, and `Minute`. Year is not needed from this as `Year` is already a column.
+With the format of the `Date` column we needed to change it from a string to a Date datatype to be able to do time and date analysis.
 
 ``` r
-crimes <- crimes %>% 
-  separate(Date, 
-           into = c("Date", "Time"),
-           sep = " ",
-           extra = "merge"
-           )
-
-crimes <- crimes %>%
-  mutate(
-    Time = parse_date_time(Time, orders = "I:M:S p") %>% format("%H:%M")
-  )
-
-crimes <- crimes %>% 
-  separate(
-    Time,
-    into = c("Hour", "Minute"),
-    sep = ":",
-    convert = TRUE
-  )
-
-crimes <- crimes %>% 
-  separate(
-    Date,
-    into = c("Month", "Day"),
-    sep = "/",
-    extra = "drop",
-    convert = TRUE
-  )
+crimes$Date <- mdy_hms(crimes$Date)
 ```
 
 We then converted the data type of the `Arrest` and `Domestic` columns from strings to Boolean values.
@@ -104,10 +77,7 @@ crimes %>%
 This showed us a few incidents do not have a recorded `Ward`, and although a small percentage of the over 1 million incidents, there are thousands of locations unaccounted for. However with the dataset size we are confident this will not make a major impact on results.
 
 ### Variables
-* **Month**: The month of the incident
-* **Day**: The day of the incident
-* **Hour**: The hour of the incident 
-* **Minute**: The minute of the incident
+* **Date**: The date and time of the incident
 * **Block**: Partially redacted address which keeps the correct block
 * **Primary.Type**: The primary crime description
 * **Description**: The secondary crime description

@@ -442,38 +442,10 @@ analysis and remove the <code>X</code> column, which acted as the row
 number for records in each individual year dataset.</p>
 <pre class="r"><code>crimes &lt;- rbind(crimes_2020, crimes_2021, crimes_2022, crimes_2023, crimes_2024)
 crimes &lt;- crimes %&gt;% select(-X)</code></pre>
-<p>With the format of the <code>Date</code> column we needed to split it
-up into <code>Month</code>, <code>Day</code>, <code>Hour</code>, and
-<code>Minute</code>. Year is not needed from this as <code>Year</code>
-is already a column.</p>
-<pre class="r"><code>crimes &lt;- crimes %&gt;% 
-  separate(Date, 
-           into = c(&quot;Date&quot;, &quot;Time&quot;),
-           sep = &quot; &quot;,
-           extra = &quot;merge&quot;
-           )
-
-crimes &lt;- crimes %&gt;%
-  mutate(
-    Time = parse_date_time(Time, orders = &quot;I:M:S p&quot;) %&gt;% format(&quot;%H:%M&quot;)
-  )
-
-crimes &lt;- crimes %&gt;% 
-  separate(
-    Time,
-    into = c(&quot;Hour&quot;, &quot;Minute&quot;),
-    sep = &quot;:&quot;,
-    convert = TRUE
-  )
-
-crimes &lt;- crimes %&gt;% 
-  separate(
-    Date,
-    into = c(&quot;Month&quot;, &quot;Day&quot;),
-    sep = &quot;/&quot;,
-    extra = &quot;drop&quot;,
-    convert = TRUE
-  )</code></pre>
+<p>With the format of the <code>Date</code> column we needed to change
+it from a string to a Date datatype to be able to do time and date
+analysis.</p>
+<pre class="r"><code>crimes$Date &lt;- mdy_hms(crimes$Date)</code></pre>
 <p>We then converted the data type of the <code>Arrest</code> and
 <code>Domestic</code> columns from strings to Boolean values.</p>
 <pre class="r"><code>crimes$Arrest &lt;- as.logical(crimes$Arrest)
@@ -483,23 +455,23 @@ NA values, so we created a table showing the count of NA values for each
 column.</p>
 <pre class="r"><code>crimes %&gt;%
   summarise(across(everything(), ~ sum(is.na(.))))</code></pre>
-<pre><code>##   Month Day Hour Minute Block Primary.Type Description Location.Description
-## 1     0   0    0      0     0            0           0                    0
-##   Arrest Domestic District Ward Year Latitude Longitude
-## 1      0        0        0   33    0    16486     16486</code></pre>
+<pre><code>##   Date Block Primary.Type Description Location.Description Arrest Domestic
+## 1    0     0            0           0                    0      0        0
+##   District Ward Year Latitude Longitude
+## 1        0   33    0    16486     16486</code></pre>
 <p>This shows us a few incidents do not have a recorded
 <code>Ward</code>, and although a small percentage of the over 1 million
 incidents, there are thousands of locations unaccounted for. However
 with the dataset size we are confident this will not make a major impact
 on results.</p>
 <pre class="r"><code>head(crimes)</code></pre>
-<pre><code>##   Month Day Hour Minute                Block               Primary.Type
-## 1    10  30   16     30      011XX E 82ND ST    CRIMINAL SEXUAL ASSAULT
-## 2    10   1    0      1      031XX W 53RD PL OFFENSE INVOLVING CHILDREN
-## 3     9   4    0      0     0000X W 112TH PL OFFENSE INVOLVING CHILDREN
-## 4     8   6    0      0     081XX S KNOX AVE                    BATTERY
-## 5     7  18   22      0  067XX N WESTERN AVE                    BATTERY
-## 6     3  19    5     50 058XX W WAVELAND AVE          WEAPONS VIOLATION
+<pre><code>##                  Date                Block               Primary.Type
+## 1 2020-10-30 16:30:00      011XX E 82ND ST    CRIMINAL SEXUAL ASSAULT
+## 2 2020-10-01 00:01:00      031XX W 53RD PL OFFENSE INVOLVING CHILDREN
+## 3 2020-09-04 00:00:00     0000X W 112TH PL OFFENSE INVOLVING CHILDREN
+## 4 2020-08-06 00:00:00     081XX S KNOX AVE                    BATTERY
+## 5 2020-07-18 22:00:00  067XX N WESTERN AVE                    BATTERY
+## 6 2020-03-19 05:50:00 058XX W WAVELAND AVE          WEAPONS VIOLATION
 ##                                           Description Location.Description
 ## 1                                           PREDATORY            RESIDENCE
 ## 2            SEXUAL ASSAULT OF CHILD BY FAMILY MEMBER            RESIDENCE
@@ -520,10 +492,7 @@ analysis.</p>
 <div id="variables" class="section level3">
 <h3>Variables</h3>
 <ul>
-<li><strong>Month</strong>: The month of the incident</li>
-<li><strong>Day</strong>: The day of the incident</li>
-<li><strong>Hour</strong>: The hour of the incident</li>
-<li><strong>Minute</strong>: The minute of the incident</li>
+<li><strong>Date</strong>: The date and time of the incident</li>
 <li><strong>Block</strong>: Partially redacted address which keeps the
 correct block</li>
 <li><strong>Primary.Type</strong>: The primary crime description</li>

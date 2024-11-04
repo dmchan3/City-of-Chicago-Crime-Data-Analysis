@@ -438,39 +438,107 @@ crimes_2022 &lt;- merge(read.csv(&quot;2022_1.csv&quot;), read.csv(&quot;2022_2.
 crimes_2023 &lt;- merge(read.csv(&quot;2023_1.csv&quot;), read.csv(&quot;2023_2.csv&quot;))
 crimes_2024 &lt;- merge(read.csv(&quot;2024_1.csv&quot;), read.csv(&quot;2024_2.csv&quot;))</code></pre>
 <p>We then needed to combine all years into one main dataframe for
-analysis.</p>
+analysis and remove the <code>X</code> column, which acted as the row
+number for records in each individual year dataset.</p>
 <pre class="r"><code>crimes &lt;- rbind(crimes_2020, crimes_2021, crimes_2022, crimes_2023, crimes_2024)
-crimes %&gt;% count(Year)</code></pre>
-<pre><code>##   Year      n
-## 1 2020 212500
-## 2 2021 209363
-## 3 2022 239580
-## 4 2023 262605
-## 5 2024 209572</code></pre>
-<p>Our final data cleaning step was to split the <code>Date</code>
-column into <code>Month</code>, <code>Day</code>, <code>Hour</code>, and
+crimes &lt;- crimes %&gt;% select(-X)</code></pre>
+<p>With the format of the <code>Date</code> column we needed to split it
+up into <code>Month</code>, <code>Day</code>, <code>Hour</code>, and
 <code>Minute</code>. Year is not needed from this as <code>Year</code>
 is already a column.</p>
-<pre class="r"><code># DO DATE SPLIT</code></pre>
+<pre class="r"><code>crimes &lt;- crimes %&gt;% 
+  separate(Date, 
+           into = c(&quot;Date&quot;, &quot;Time&quot;),
+           sep = &quot; &quot;,
+           extra = &quot;merge&quot;
+           )
+
+crimes &lt;- crimes %&gt;%
+  mutate(
+    Time = parse_date_time(Time, orders = &quot;I:M:S p&quot;) %&gt;% format(&quot;%H:%M&quot;)
+  )
+
+crimes &lt;- crimes %&gt;% 
+  separate(
+    Time,
+    into = c(&quot;Hour&quot;, &quot;Minute&quot;),
+    sep = &quot;:&quot;,
+    convert = TRUE
+  )
+
+crimes &lt;- crimes %&gt;% 
+  separate(
+    Date,
+    into = c(&quot;Month&quot;, &quot;Day&quot;),
+    sep = &quot;/&quot;,
+    extra = &quot;drop&quot;,
+    convert = TRUE
+  )</code></pre>
+<p>We then converted the data type of the <code>Arrest</code> and
+<code>Domestic</code> columns from strings to Boolean values.</p>
+<pre class="r"><code>crimes$Arrest &lt;- as.logical(crimes$Arrest)
+crimes$Domestic &lt;- as.logical(crimes$Domestic)</code></pre>
+<p>We also wanted to get an idea of potential future issues based off of
+NA values, so we created a table showing the count of NA values for each
+column.</p>
+<pre class="r"><code>crimes %&gt;%
+  summarise(across(everything(), ~ sum(is.na(.))))</code></pre>
+<pre><code>##   Month Day Hour Minute Block Primary.Type Description Location.Description
+## 1     0   0    0      0     0            0           0                    0
+##   Arrest Domestic District Ward Year Latitude Longitude
+## 1      0        0        0   33    0    16486     16486</code></pre>
+<p>This shows us a few incidents do not have a recorded
+<code>Ward</code>, and although a small percentage of the over 1 million
+incidents, there are thousands of locations unaccounted for. However
+with the dataset size we are confident this will not make a major impact
+on results.</p>
+<pre class="r"><code>head(crimes)</code></pre>
+<pre><code>##   Month Day Hour Minute                Block               Primary.Type
+## 1    10  30   16     30      011XX E 82ND ST    CRIMINAL SEXUAL ASSAULT
+## 2    10   1    0      1      031XX W 53RD PL OFFENSE INVOLVING CHILDREN
+## 3     9   4    0      0     0000X W 112TH PL OFFENSE INVOLVING CHILDREN
+## 4     8   6    0      0     081XX S KNOX AVE                    BATTERY
+## 5     7  18   22      0  067XX N WESTERN AVE                    BATTERY
+## 6     3  19    5     50 058XX W WAVELAND AVE          WEAPONS VIOLATION
+##                                           Description Location.Description
+## 1                                           PREDATORY            RESIDENCE
+## 2            SEXUAL ASSAULT OF CHILD BY FAMILY MEMBER            RESIDENCE
+## 3 AGGRAVATED SEXUAL ASSAULT OF CHILD BY FAMILY MEMBER            RESIDENCE
+## 4                      AGGRAVATED OF A SENIOR CITIZEN            RESIDENCE
+## 5                             DOMESTIC BATTERY SIMPLE        PARK PROPERTY
+## 6                          RECKLESS FIREARM DISCHARGE            RESIDENCE
+##   Arrest Domestic District Ward Year Latitude Longitude
+## 1   TRUE     TRUE        4    8 2020 41.74588 -87.59717
+## 2  FALSE     TRUE        9   14 2020       NA        NA
+## 3   TRUE     TRUE        5    9 2020       NA        NA
+## 4  FALSE     TRUE        8   18 2020       NA        NA
+## 5   TRUE     TRUE       24   40 2020 42.00420 -87.69005
+## 6  FALSE    FALSE       16   38 2020 41.94764 -87.77238</code></pre>
+<p>Here is the head of our dataframe that we will be using for
+analysis.</p>
 </div>
 <div id="variables" class="section level3">
 <h3>Variables</h3>
 <ul>
-<li>Month: The month of the incident</li>
-<li>Day: The day of the incident</li>
-<li>Hour: The hour of the incident</li>
-<li>Minute: The minute of the incident</li>
-<li>Block: Partially redacted address which keeps the correct block</li>
-<li>Primary.Type: The primary crime description</li>
-<li>Description: The secondary crime description</li>
-<li>Location.Description: Description of the incident location</li>
-<li>Arrest: Whether an arrest was made</li>
-<li>Domestic: Whether the incident was domestic</li>
-<li>District: Police district where the incident occurred</li>
-<li>Ward: City Council district where the incident occurred</li>
-<li>Year: The year of the incident</li>
-<li>Latitude: Latitude of the incident location</li>
-<li>Longitude: Longitude of the incident location</li>
+<li><strong>Month</strong>: The month of the incident</li>
+<li><strong>Day</strong>: The day of the incident</li>
+<li><strong>Hour</strong>: The hour of the incident</li>
+<li><strong>Minute</strong>: The minute of the incident</li>
+<li><strong>Block</strong>: Partially redacted address which keeps the
+correct block</li>
+<li><strong>Primary.Type</strong>: The primary crime description</li>
+<li><strong>Description</strong>: The secondary crime description</li>
+<li><strong>Location.Description</strong>: Description of the incident
+location</li>
+<li><strong>Arrest</strong>: Whether an arrest was made</li>
+<li><strong>Domestic</strong>: Whether the incident was domestic</li>
+<li><strong>District</strong>: Police district where the incident
+occurred</li>
+<li><strong>Ward</strong>: City Council district where the incident
+occurred</li>
+<li><strong>Year</strong>: The year of the incident</li>
+<li><strong>Latitude</strong>: Latitude of the incident location</li>
+<li><strong>Longitude</strong>: Longitude of the incident location</li>
 </ul>
 </div>
 </div>

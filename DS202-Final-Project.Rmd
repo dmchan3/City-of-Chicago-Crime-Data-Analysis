@@ -26,7 +26,7 @@ Our primary dataset comes from the City of Chicago government open data portal, 
 
 
 ### Initial Data Cleaning Steps
-```{r results='hide'}
+```{r, echo=TRUE, results='hide'}
 library(tidyverse)
 ```
 
@@ -49,30 +49,75 @@ crimes_2023 <- merge(read.csv("2023_1.csv"), read.csv("2023_2.csv"))
 crimes_2024 <- merge(read.csv("2024_1.csv"), read.csv("2024_2.csv"))
 ```
 
-We then needed to combine all years into one main dataframe for analysis.
+We then needed to combine all years into one main dataframe for analysis and remove the `X` column, which acted as the row number for records in each individual year dataset.
 ```{r}
 crimes <- rbind(crimes_2020, crimes_2021, crimes_2022, crimes_2023, crimes_2024)
-crimes %>% count(Year)
+crimes <- crimes %>% select(-X)
 ```
 
-Our final data cleaning step was to split the `Date` column into `Month`, `Day`, `Hour`, and `Minute`. Year is not needed from this as `Year` is already a column.
+With the format of the `Date` column we needed to split it up into `Month`, `Day`, `Hour`, and `Minute`. Year is not needed from this as `Year` is already a column.
 ```{r}
-# DO DATE SPLIT
+crimes <- crimes %>% 
+  separate(Date, 
+           into = c("Date", "Time"),
+           sep = " ",
+           extra = "merge"
+           )
+
+crimes <- crimes %>%
+  mutate(
+    Time = parse_date_time(Time, orders = "I:M:S p") %>% format("%H:%M")
+  )
+
+crimes <- crimes %>% 
+  separate(
+    Time,
+    into = c("Hour", "Minute"),
+    sep = ":",
+    convert = TRUE
+  )
+
+crimes <- crimes %>% 
+  separate(
+    Date,
+    into = c("Month", "Day"),
+    sep = "/",
+    extra = "drop",
+    convert = TRUE
+  )
 ```
+
+We then converted the data type of the `Arrest` and `Domestic` columns from strings to Boolean values.
+```{r}
+crimes$Arrest <- as.logical(crimes$Arrest)
+crimes$Domestic <- as.logical(crimes$Domestic)
+```
+
+We also wanted to get an idea of potential future issues based off of NA values, so we created a table showing the count of NA values for each column.
+```{r}
+crimes %>%
+  summarise(across(everything(), ~ sum(is.na(.))))
+```
+This shows us a few incidents do not have a recorded `Ward`, and although a small percentage of the over 1 million incidents, there are thousands of locations unaccounted for. However with the dataset size we are confident this will not make a major impact on results.
+
+```{r}
+head(crimes)
+```
+Here is the head of our dataframe that we will be using for analysis.
 
 ### Variables
-* Month: The month of the incident
-* Day: The day of the incident
-* Hour: The hour of the incident 
-* Minute: The minute of the incident
-* Block: Partially redacted address which keeps the correct block
-* Primary.Type: The primary crime description
-* Description: The secondary crime description
-* Location.Description: Description of the incident location
-* Arrest: Whether an arrest was made
-* Domestic: Whether the incident was domestic
-* District: Police district where the incident occurred
-* Ward: City Council district where the incident occurred
-* Year: The year of the incident
-* Latitude: Latitude of the incident location
-* Longitude: Longitude of the incident location
+* **Month**: The month of the incident
+* **Day**: The day of the incident
+* **Hour**: The hour of the incident 
+* **Minute**: The minute of the incident
+* **Block**: Partially redacted address which keeps the correct block
+* **Primary.Type**: The primary crime description
+* **Description**: The secondary crime description
+* **Location.Description**: Description of the incident location
+* **Arrest**: Whether an arrest was made
+* **Domestic**: Whether the incident was domestic
+* **District**: Police district where the incident occurred
+* **Ward**: City Council district where the incident occurred
+* **Year**: The year of the incident
+* **Latitude**: Latitude of the incident location
+* **Longitude**: Longitude of the incident location

@@ -11,7 +11,7 @@
 
 
 
-<title>City of Chicago Crime Data Analysis Project Proposal</title>
+<title>README</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -348,13 +348,12 @@ display: none;
 
 
 
-<h1 class="title toc-ignore">City of Chicago Crime Data Analysis Project
-Proposal</h1>
-<h4 class="date">11-03-24</h4>
 
 </div>
 
 
+<div id="analysis-of-chicago-crime-2020-2024" class="section level1">
+<h1>Analysis of Chicago Crime 2020-2024</h1>
 <div id="research-topic" class="section level2">
 <h2>Research Topic</h2>
 <p>This project will analyze City of Chicago crime data to explore
@@ -371,7 +370,6 @@ have evolved.</p>
 <li>David Chan</li>
 <li>Croix Westbrock</li>
 <li>Srishti Nandal</li>
-<li>Matthew Ritland</li>
 </ul>
 </div>
 <div id="data" class="section level2">
@@ -392,8 +390,7 @@ be found on the site linked above by searching “Crimes -
 <li>What are the most committed crimes in Chicago? Which crimes lead to
 the most arrests? How many crimes are domestic versus non-domestic?</li>
 <li>Are there any seasonal crime patterns? Does quantity or types of
-crimes vary noticeably with changing of months and seasons? Time of
-day?</li>
+crimes vary noticeably with changing of months and seasons?</li>
 <li>How was Chicago crime affected by COVID-19? Is there a noticeable
 difference in the quantity and/or types of crimes committed during
 COVID-19 times versus recent “normal” times?</li>
@@ -401,25 +398,11 @@ COVID-19 times versus recent “normal” times?</li>
 <li>O Block is widely known as one of the most dangerous blocks in
 Chicago and the United States as a whole. How do O Block crime rates
 compare to the rest of Chicago?</li>
-<li>What are the top 10 most dangerous location types? Is there any
-change by year?</li>
-<li>What areas of Chicago hold the most arrests? Does this differ from
-the whole dataset?</li>
 </ul>
 </div>
 <div id="initial-data-cleaning-steps" class="section level3">
 <h3>Initial Data Cleaning Steps</h3>
 <pre class="r"><code>library(tidyverse)</code></pre>
-<pre><code>## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
-## ✔ dplyr     1.1.4     ✔ readr     2.1.5
-## ✔ forcats   1.0.0     ✔ stringr   1.5.1
-## ✔ ggplot2   3.5.1     ✔ tibble    3.2.1
-## ✔ lubridate 1.9.3     ✔ tidyr     1.3.1
-## ✔ purrr     1.0.2     
-## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-## ✖ dplyr::filter() masks stats::filter()
-## ✖ dplyr::lag()    masks stats::lag()
-## ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
 <p>While trying to load the datasets for each year, we ran into a
 problem where each of the files were too large for Github’s 25mb file
 size limit. To work around this, we worked in a separate R script file
@@ -461,39 +444,11 @@ NA values, so we created a table showing the count of NA values for each
 column.</p>
 <pre class="r"><code>crimes %&gt;%
   summarise(across(everything(), ~ sum(is.na(.))))</code></pre>
-<pre><code>##   Date Block Primary.Type Description Location.Description Arrest Domestic
-## 1    0     0            0           0                    0      0        0
-##   District Ward Year Latitude Longitude
-## 1        0   33    0    16486     16486</code></pre>
-<p>This shows us a few incidents do not have a recorded
+<p>This showed us a few incidents do not have a recorded
 <code>Ward</code>, and although a small percentage of the over 1 million
 incidents, there are thousands of locations unaccounted for. However
 with the dataset size we are confident this will not make a major impact
 on results.</p>
-<pre class="r"><code>head(crimes)</code></pre>
-<pre><code>##                  Date                Block               Primary.Type
-## 1 2020-10-30 16:30:00      011XX E 82ND ST    CRIMINAL SEXUAL ASSAULT
-## 2 2020-10-01 00:01:00      031XX W 53RD PL OFFENSE INVOLVING CHILDREN
-## 3 2020-09-04 00:00:00     0000X W 112TH PL OFFENSE INVOLVING CHILDREN
-## 4 2020-08-06 00:00:00     081XX S KNOX AVE                    BATTERY
-## 5 2020-07-18 22:00:00  067XX N WESTERN AVE                    BATTERY
-## 6 2020-03-19 05:50:00 058XX W WAVELAND AVE          WEAPONS VIOLATION
-##                                           Description Location.Description
-## 1                                           PREDATORY            RESIDENCE
-## 2            SEXUAL ASSAULT OF CHILD BY FAMILY MEMBER            RESIDENCE
-## 3 AGGRAVATED SEXUAL ASSAULT OF CHILD BY FAMILY MEMBER            RESIDENCE
-## 4                      AGGRAVATED OF A SENIOR CITIZEN            RESIDENCE
-## 5                             DOMESTIC BATTERY SIMPLE        PARK PROPERTY
-## 6                          RECKLESS FIREARM DISCHARGE            RESIDENCE
-##   Arrest Domestic District Ward Year Latitude Longitude
-## 1   TRUE     TRUE        4    8 2020 41.74588 -87.59717
-## 2  FALSE     TRUE        9   14 2020       NA        NA
-## 3   TRUE     TRUE        5    9 2020       NA        NA
-## 4  FALSE     TRUE        8   18 2020       NA        NA
-## 5   TRUE     TRUE       24   40 2020 42.00420 -87.69005
-## 6  FALSE    FALSE       16   38 2020 41.94764 -87.77238</code></pre>
-<p>Here is the head of our dataframe that we will be using for
-analysis.</p>
 </div>
 <div id="variables" class="section level3">
 <h3>Variables</h3>
@@ -515,90 +470,6 @@ occurred</li>
 <li><strong>Latitude</strong>: Latitude of the incident location</li>
 <li><strong>Longitude</strong>: Longitude of the incident location</li>
 </ul>
-<div id="o-block-is-widely-known-as-one-of-the-most-dangerous-blocks-in-chicago-and-the-united-states-as-a-whole.-how-do-o-block-crime-rates-compare-to-the-rest-of-chicago" class="section level4">
-<h4>O Block is widely known as one of the most dangerous blocks in
-Chicago and the United States as a whole. How do O Block crime rates
-compare to the rest of Chicago?</h4>
-<pre class="r"><code>oblock &lt;- crimes %&gt;% 
-  filter(Latitude &lt; 41.78037, Latitude &gt; 41.774810, 
-         Longitude &gt; -87.617464, Longitude &lt; -87.614991)
-
-non_oblock &lt;- crimes %&gt;% 
-  anti_join(oblock)</code></pre>
-<pre><code>## Joining with `by = join_by(Date, Block, Primary.Type, Description,
-## Location.Description, Arrest, Domestic, District, Ward, Year, Latitude,
-## Longitude)`</code></pre>
-<p>We will first begin with an overall analysis of O Block crimes.</p>
-<pre class="r"><code>#O Block is stated to have a capacity of 2,000 people
-oblock_population = 2000
-
-oblock %&gt;% 
-  group_by(Primary.Type) %&gt;% 
-  summarise(
-    n = n(),
-    percent = n() / nrow(oblock) * 100,
-    rate_per_100 = n() / oblock_population * 100
-  ) %&gt;% 
-  arrange(desc(n))</code></pre>
-<pre><code>## # A tibble: 21 × 4
-##    Primary.Type            n percent rate_per_100
-##    &lt;chr&gt;               &lt;int&gt;   &lt;dbl&gt;        &lt;dbl&gt;
-##  1 BATTERY               913   34.2         45.6 
-##  2 ASSAULT               323   12.1         16.2 
-##  3 CRIMINAL DAMAGE       316   11.8         15.8 
-##  4 THEFT                 255    9.56        12.8 
-##  5 WEAPONS VIOLATION     149    5.59         7.45
-##  6 OTHER OFFENSE         136    5.10         6.8 
-##  7 ROBBERY               107    4.01         5.35
-##  8 CRIMINAL TRESPASS      89    3.34         4.45
-##  9 MOTOR VEHICLE THEFT    84    3.15         4.2 
-## 10 BURGLARY               74    2.77         3.7 
-## # ℹ 11 more rows</code></pre>
-<p>Now we will look at the same analysis of non O Block crimes.</p>
-<pre class="r"><code># The city of Chicago is listed to have a population of 2.664 million, however that includes O Block
-non_oblock_population = 2664000 - oblock_population
-
-non_oblock %&gt;% 
-  group_by(Primary.Type) %&gt;% 
-  summarise(
-    n = n(),
-    percent = n() / nrow(non_oblock) * 100,
-    rate_per_100 = n() / non_oblock_population * 100
-  ) %&gt;% 
-  arrange(desc(n))</code></pre>
-<pre><code>## # A tibble: 33 × 4
-##    Primary.Type             n percent rate_per_100
-##    &lt;chr&gt;                &lt;int&gt;   &lt;dbl&gt;        &lt;dbl&gt;
-##  1 THEFT               243067   21.5          9.13
-##  2 BATTERY             203891   18.0          7.66
-##  3 CRIMINAL DAMAGE     130254   11.5          4.89
-##  4 ASSAULT             101064    8.94         3.80
-##  5 MOTOR VEHICLE THEFT  89180    7.89         3.35
-##  6 DECEPTIVE PRACTICE   82356    7.28         3.09
-##  7 OTHER OFFENSE        70451    6.23         2.65
-##  8 ROBBERY              43127    3.81         1.62
-##  9 WEAPONS VIOLATION    41427    3.66         1.56
-## 10 BURGLARY             36993    3.27         1.39
-## # ℹ 23 more rows</code></pre>
-<p>We see in the tables above that O Block holds a greater percentage of
-its crimes in battery and assault, more violent crimes, whereas we see a
-higher percentage of theft related crimes. The largest difference we see
-in these tables come in the <code>rate_per_100</code> column. This
-column shows how many instances of each crime occur per 100 people in
-the population. Here we see overall rates significantly higher in O
-Block than the rest of Chicago, especially in violent crimes. In O
-Block, we see that for every 100 people, there are 45.65 batteries,
-16.15 assaults, and 0.70 homicides. Additionally, we see extremely high
-rates in criminal damage (15.80), and theft (12.75). Comparing the
-violent crimes to the rest of Chicago, in the rest of Chicago we see per
-100 people only approximately 7.66 batteries, 3.80 assaults, and 0.13
-homicides. Even theft, which has the highest rate in non O Block
-Chicago, still has a lower rate than O Block, with 9.13 thefts per 100
-people, and criminal damage in third is less than a third of O Block’s
-rate, at 4.89.</p>
-<p>Overall, we see significantly higher crime rates in O Block than the
-rest of Chicago. More specifically, we see even higher crime rate
-differences in violent crimes.</p>
 </div>
 </div>
 </div>

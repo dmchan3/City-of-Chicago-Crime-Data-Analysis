@@ -113,7 +113,7 @@ We will first begin with an overall analysis of O Block crimes.
 #O Block is stated to have a capacity of 2,000 people
 oblock_population = 2000
 
-oblock %>% 
+obrates <- oblock %>% 
   group_by(Primary.Type) %>% 
   summarise(
     n = n(),
@@ -121,6 +121,22 @@ oblock %>%
     rate_per_100 = n() / oblock_population * 100
   ) %>% 
   arrange(desc(n))
+
+obrates
+```
+```{r}
+obrates %>% 
+  ggplot(
+    aes(
+      x = reorder(Primary.Type, rate_per_100), 
+      y = rate_per_100
+    )
+  ) + 
+  geom_col() +
+  coord_flip() +
+  ggtitle("O Block Crime Rates") +
+  xlab("Crime") +
+  ylab("Rate Per 100 People")
 ```
 
 Now we will look at the same analysis of non O Block crimes.
@@ -128,7 +144,7 @@ Now we will look at the same analysis of non O Block crimes.
 # The city of Chicago is listed to have a population of 2.664 million, however that includes O Block
 non_oblock_population = 2664000 - oblock_population
 
-non_oblock %>% 
+nonrates <- non_oblock %>% 
   group_by(Primary.Type) %>% 
   summarise(
     n = n(),
@@ -136,10 +152,31 @@ non_oblock %>%
     rate_per_100 = n() / non_oblock_population * 100
   ) %>% 
   arrange(desc(n))
+
+nonrates
 ```
+```{r}
+nonrates %>% 
+  filter(
+    rate_per_100 > .01
+  ) %>% 
+  ggplot(
+    aes(
+      x = reorder(Primary.Type, rate_per_100), 
+      y = rate_per_100
+    )
+  ) + 
+  geom_col() +
+  coord_flip() +
+  ggtitle("Rest of Chicago Crime Rates") +
+  xlab("Crime") +
+  ylab("Rate Per 100 People")
+```
+
 
 We see in the tables above that O Block holds a greater percentage of its crimes in battery and assault, more violent crimes, whereas we see a higher percentage of theft related crimes. The largest difference we see in these tables come in the `rate_per_100` column. This column shows how many instances of each crime occur per 100 people in the population. Here we see overall rates significantly higher in O Block than the rest of Chicago, especially in violent crimes. In O Block, we see that for every 100 people, there are 45.65 batteries, 16.15 assaults, and 0.70 homicides. Additionally, we see extremely high rates in criminal damage (15.80), and theft (12.75). Comparing the violent crimes to the rest of Chicago, in the rest of Chicago we see per 100 people only approximately 7.66 batteries, 3.80 assaults, and 0.13 homicides. Even theft, which has the highest rate in non O Block Chicago, still has a lower rate than O Block, with 9.13 thefts per 100 people, and criminal damage in third is less than a third of O Block's rate, at 4.89.
 
 Overall, we see significantly higher crime rates in O Block than the rest of Chicago. More specifically, we see even higher crime rate differences in violent crimes.
+
 
 

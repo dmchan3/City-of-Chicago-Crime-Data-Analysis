@@ -20,7 +20,7 @@ Our primary dataset comes from the City of Chicago government open data portal, 
 * How was Chicago crime affected by COVID-19? Is there a noticeable difference in the quantity and/or types of crimes committed during COVID-19 times versus recent "normal" times?
 * What areas of Chicago produce the most crimes? Block? District?
 * O Block is widely known as one of the most dangerous blocks in Chicago and the United States as a whole. How do O Block crime rates compare to the rest of Chicago?
-* What are the top 10 most dangerous location types? Is there any change by year?
+* What are the most dangerous location types? Is there any change by year?
 * What areas of Chicago hold the most arrests? Does this differ from the whole dataset?
 
 ### Initial Data Cleaning Steps

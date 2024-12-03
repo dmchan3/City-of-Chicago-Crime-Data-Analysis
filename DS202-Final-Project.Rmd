@@ -5,35 +5,40 @@ output: html_document
 ---
 
 ## Research Topic
+
 This project will analyze City of Chicago crime data to explore patterns and insights over the past 5 years. Using this large dataset (200-300k records per year), our aim is to identify trends and examine crime intensity based on locations, times, and types of offenses. Specifically, we will explore questions such as which blocks or streets are the most dangerous, seasonal crime patterns, and how these trends have evolved.
 
 ## Team Members
-- David Chan
-- Croix Westbrock
-- Srishti Nandal 
-- Matthew Ritland
+
+-   David Chan
+-   Croix Westbrock
+-   Srishti Nandal
+-   Matthew Ritland
 
 ## Data
 
 ### Description of the Dataset
-Our primary dataset comes from the City of Chicago government open data portal, containing records of reported crimes. The link to the full dataset (2001-Present) is https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-Present/ijzp-q8t2/about_data . For this project, we are using a subset of this dataset to focus on the last 5 years. CSV files for specific years, as we will be using, can be found on the site linked above by searching "Crimes - *Year*".
+
+Our primary dataset comes from the City of Chicago government open data portal, containing records of reported crimes. The link to the full dataset (2001-Present) is <https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-Present/ijzp-q8t2/about_data> . For this project, we are using a subset of this dataset to focus on the last 5 years. CSV files for specific years, as we will be using, can be found on the site linked above by searching "Crimes - *Year*".
 
 ### Questions to be Addressed
-* What are the most committed crimes in Chicago? Which crimes lead to the most arrests? How many crimes are domestic versus non-domestic?
-* Are there any seasonal crime patterns? Does quantity or types of crimes vary noticeably with changing of months and seasons? Time of day?
-* How was Chicago crime affected by COVID-19? Is there a noticeable difference in the quantity and/or types of crimes committed during COVID-19 times versus recent "normal" times?
-* What areas of Chicago produce the most crimes? Block? District?
-* O Block is widely known as one of the most dangerous blocks in Chicago and the United States as a whole. How do O Block crime rates compare to the rest of Chicago?
-* What are the top 10 most dangerous location types? Is there any change by year?
-* What areas of Chicago hold the most arrests? Does this differ from the whole dataset?
 
+-   What are the most committed crimes in Chicago? Which crimes lead to the most arrests? How many crimes are domestic versus non-domestic?
+-   Are there any seasonal crime patterns? Does quantity or types of crimes vary noticeably with changing of months and seasons? Time of day?
+-   How was Chicago crime affected by COVID-19? Is there a noticeable difference in the quantity and/or types of crimes committed during COVID-19 times versus recent "normal" times?
+-   What areas of Chicago produce the most crimes? Block? District?
+-   O Block is widely known as one of the most dangerous blocks in Chicago and the United States as a whole. How do O Block crime rates compare to the rest of Chicago?
+-   What are the top 10 most dangerous location types? Is there any change by year?
+-   What areas of Chicago hold the most arrests? Does this differ from the whole dataset?
 
 ### Initial Data Cleaning Steps
+
 ```{r, echo=TRUE, results='hide'}
 library(tidyverse)
 ```
 
 While trying to load the datasets for each year, we ran into a problem where each of the files were too large for Github's 25mb file size limit. To work around this, we worked in a separate R script file to first eliminate the columns that were repetitive or not useful to our project. This narrowed our data to 12 columns from the previous 22. We then split each csv file into 2 different csv files, with the first including the first 4 columns, and the second containing the last 8. This split made each file similar in size, and more importantly, under the Github file size threshold. The code for this process for the 2024 dataset is given below as an example (with everything commented out as it will not run here)
+
 ```{r}
 # data2024 <- read.csv("ProjectFiles/Crimes - 2024.csv")
 # c1_2024 <- data2024 %>% select(Date, Block, Primary.Type, Description)
@@ -53,52 +58,161 @@ crimes_2024 <- merge(read.csv("2024_1.csv"), read.csv("2024_2.csv"))
 ```
 
 We then needed to combine all years into one main dataframe for analysis and remove the `X` column, which acted as the row number for records in each individual year dataset.
+
 ```{r}
 crimes <- rbind(crimes_2020, crimes_2021, crimes_2022, crimes_2023, crimes_2024)
 crimes <- crimes %>% select(-X)
 ```
 
 With the format of the `Date` column we needed to change it from a string to a Date datatype to be able to do time and date analysis.
+
 ```{r}
 crimes$Date <- mdy_hms(crimes$Date)
 ```
 
 We then converted the data type of the `Arrest` and `Domestic` columns from strings to Boolean values.
+
 ```{r}
 crimes$Arrest <- as.logical(crimes$Arrest)
 crimes$Domestic <- as.logical(crimes$Domestic)
 ```
 
 We also wanted to get an idea of potential future issues based off of NA values, so we created a table showing the count of NA values for each column.
+
 ```{r}
 crimes %>%
   summarise(across(everything(), ~ sum(is.na(.))))
 ```
+
 This shows us a few incidents do not have a recorded `Ward`, and although a small percentage of the over 1 million incidents, there are thousands of locations unaccounted for. However with the dataset size we are confident this will not make a major impact on results.
 
 ```{r}
 head(crimes)
 ```
+
 Here is the head of our dataframe that we will be using for analysis.
 
 ### Variables
-* **Date**: The date and time of the incident
-* **Block**: Partially redacted address which keeps the correct block
-* **Primary.Type**: The primary crime description
-* **Description**: The secondary crime description
-* **Location.Description**: Description of the incident location
-* **Arrest**: Whether an arrest was made
-* **Domestic**: Whether the incident was domestic
-* **District**: Police district where the incident occurred
-* **Ward**: City Council district where the incident occurred
-* **Year**: The year of the incident
-* **Latitude**: Latitude of the incident location
-* **Longitude**: Longitude of the incident location
 
+-   **Date**: The date and time of the incident
+-   **Block**: Partially redacted address which keeps the correct block
+-   **Primary.Type**: The primary crime description
+-   **Description**: The secondary crime description
+-   **Location.Description**: Description of the incident location
+-   **Arrest**: Whether an arrest was made
+-   **Domestic**: Whether the incident was domestic
+-   **District**: Police district where the incident occurred
+-   **Ward**: City Council district where the incident occurred
+-   **Year**: The year of the incident
+-   **Latitude**: Latitude of the incident location
+-   **Longitude**: Longitude of the incident location
 
+#### What are the most committed crimes in Chicago? Which crimes lead to the most arrests? How many crimes are domestic versus non-domestic?
 
+-Firstly we identify the most frequently reported crimes in Chicago.
+
+```{r}
+# Count the frequency of each crime type
+crime_counts <- crimes %>%
+  group_by(Primary.Type) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))
+# Display top 10 most common crimes
+crime_counts_top10 <- head(crime_counts, 10)
+print(crime_counts_top10)
+
+# Plot the top 10 crimes
+ggplot(crime_counts_top10, aes(x = reorder(Primary.Type, -Count), y = Count)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  labs(title = "Top 10 Most Committed Crimes in Chicago", x = "Crime Type", y = "Count") +
+  theme_minimal() +
+  coord_flip()
+
+```
+
+Theft is the most common crime, followed by battery and criminal damage.
+
+-Then identify which crimes have the highest arrest rates.
+
+```{r}
+# Calculate arrest rates by crime type
+ArrestRates <- crimes %>%
+  group_by(Primary.Type) %>%
+  summarise(Total = n(), Arrests = sum(Arrest, na.rm = TRUE)) %>%
+  mutate(ArrestRate = Arrests / Total * 100) %>%
+  arrange(desc(ArrestRate))
+
+# Display top 10 crimes with the highest arrest rates
+top10 <- head(arrest_rates, 10)
+print(top10)
+
+# Plot crimes with the highest arrest rates
+ggplot(top10, aes(x = reorder(Primary.Type, -ArrestRate), y = ArrestRate)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  labs(title = "Crimes with the Highest Arrest Rates", x = "Crime Type", y = "Arrest Rate (%)") +
+  theme_minimal() +
+  coord_flip()
+```
+
+Narcotics-related offenses lead in arrest rates, reflecting targeted policing. Violent crimes like homicide and robbery also show high arrest rates due to their severity and societal focus.
+
+Now Comparing the frequency of domestic versus non-domestic crimes.
+
+```{r}
+library(dplyr)
+# Count domestic and non-domestic crimes
+DomesticCounts <- crimes %>%
+  group_by(Domestic) %>%
+  summarise(Count = n())
+
+print(DomesticCounts)
+# Pie chart for domestic vs. non-domestic crimes
+ggplot(DomesticCounts, aes(x = "", y = Count, fill = Domestic)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y") +
+  labs(title = "Proportion of Domestic vs. Non-Domestic Crimes", fill = "Domestic") +
+  theme_void()
+```
+
+#### How was Chicago crime affected by COVID-19? Is there a noticeable difference in the quantity and/or types of crimes committed during COVID-19 times versus recent "normal" times?
+
+-   Analyzing crime trends during COVID-19 (March 2020--June 2021).
+
+```{r}
+# Define periods
+crimes <- crimes %>%
+  mutate(COVID_Period = case_when(
+    Date >= ymd("2020-03-01") & Date <= ymd("2021-06-30") ~ "COVID-19",
+    Date > ymd("2021-06-30") ~ "Post-COVID",
+    Date < ymd("2020-03-01") ~ "Pre-COVID"
+  ))
+
+# Compare total crimes across periods
+crime_period_counts <- crimes %>%
+  group_by(COVID_Period) %>%
+  summarise(Count = n())
+
+print(crime_period_counts)
+
+# Bar plot for crime counts across periods
+ggplot(crime_period_counts, aes(x = COVID_Period, y = Count, fill = COVID_Period)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Crime Counts Across Periods", x = "Period", y = "Crime Count") +
+  theme_minimal()
+
+# Compare crime types during COVID-19
+crime_type_covid <- crimes %>%
+  filter(COVID_Period %in% c("COVID-19", "Pre-COVID")) %>%
+  group_by(COVID_Period, Primary.Type) %>%
+  summarise(Count = n()) %>%
+  arrange(COVID_Period, desc(Count))
+
+print(head(crime_type_covid, 20))  # Display notable differences
+
+```
 
 #### O Block is widely known as one of the most dangerous blocks in Chicago and the United States as a whole. How do O Block crime rates compare to the rest of Chicago?
+
 ```{r}
 oblock <- crimes %>% 
   filter(Latitude < 41.78037, Latitude > 41.774810, 
@@ -109,6 +223,7 @@ non_oblock <- crimes %>%
 ```
 
 We will first begin with an overall analysis of O Block crimes.
+
 ```{r}
 #O Block is stated to have a capacity of 2,000 people
 oblock_population = 2000
@@ -124,6 +239,7 @@ obrates <- oblock %>%
 
 obrates
 ```
+
 ```{r}
 obrates %>% 
   ggplot(
@@ -140,6 +256,7 @@ obrates %>%
 ```
 
 Now we will look at the same analysis of non O Block crimes.
+
 ```{r}
 # The city of Chicago is listed to have a population of 2.664 million, however that includes O Block
 non_oblock_population = 2664000 - oblock_population
@@ -155,6 +272,7 @@ nonrates <- non_oblock %>%
 
 nonrates
 ```
+
 ```{r}
 nonrates %>% 
   filter(
@@ -173,10 +291,6 @@ nonrates %>%
   ylab("Rate Per 100 People")
 ```
 
-
 We see in the tables above that O Block holds a greater percentage of its crimes in battery and assault, more violent crimes, whereas we see a higher percentage of theft related crimes. The largest difference we see in these tables come in the `rate_per_100` column. This column shows how many instances of each crime occur per 100 people in the population. Here we see overall rates significantly higher in O Block than the rest of Chicago, especially in violent crimes. In O Block, we see that for every 100 people, there are 45.65 batteries, 16.15 assaults, and 0.70 homicides. Additionally, we see extremely high rates in criminal damage (15.80), and theft (12.75). Comparing the violent crimes to the rest of Chicago, in the rest of Chicago we see per 100 people only approximately 7.66 batteries, 3.80 assaults, and 0.13 homicides. Even theft, which has the highest rate in non O Block Chicago, still has a lower rate than O Block, with 9.13 thefts per 100 people, and criminal damage in third is less than a third of O Block's rate, at 4.89.
 
 Overall, we see significantly higher crime rates in O Block than the rest of Chicago. More specifically, we see even higher crime rate differences in violent crimes.
-
-
-

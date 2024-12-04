@@ -22,6 +22,16 @@ This project will analyze City of Chicago crime data to explore patterns and ins
 Our primary dataset comes from the City of Chicago government open data portal, containing records of reported crimes. The link to the full dataset (2001-Present) is <https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-Present/ijzp-q8t2/about_data> . For this project, we are using a subset of this dataset to focus on the last 5 years. CSV files for specific years, as we will be using, can be found on the site linked above by searching "Crimes - *Year*".
 
 ### Questions to be Addressed
+<<<<<<< HEAD
+=======
+* What are the most committed crimes in Chicago? Which crimes lead to the most arrests? How many crimes are domestic versus non-domestic?
+* Are there any seasonal crime patterns? Does quantity or types of crimes vary noticeably with changing of months and seasons? Time of day?
+* How was Chicago crime affected by COVID-19? Is there a noticeable difference in the quantity and/or types of crimes committed during COVID-19 times versus recent "normal" times?
+* What areas of Chicago produce the most crimes? Block? District?
+* O Block is widely known as one of the most dangerous blocks in Chicago and the United States as a whole. How do O Block crime rates compare to the rest of Chicago?
+* What are the most dangerous location types? Is there any change by year?
+* What areas of Chicago hold the most arrests? Does this differ from the whole dataset?
+>>>>>>> 2de584b41c974aef9b01500fde0313688a7c262c
 
 -   What are the most committed crimes in Chicago? Which crimes lead to the most arrests? How many crimes are domestic versus non-domestic?
 -   Are there any seasonal crime patterns? Does quantity or types of crimes vary noticeably with changing of months and seasons? Time of day?
@@ -85,6 +95,12 @@ crimes %>%
 ```
 
 This shows us a few incidents do not have a recorded `Ward`, and although a small percentage of the over 1 million incidents, there are thousands of locations unaccounted for. However with the dataset size we are confident this will not make a major impact on results.
+
+Regarding the table above, `Location.Description` is listed to have no NA values, however has instances of "". We would like to convert all these to NA values, as that is ultimately what they are.
+```{r}
+crimes$Location.Description <-  replace(crimes$Location.Description, crimes$Location.Description == "", NA)
+```
+
 
 ```{r}
 head(crimes)
@@ -294,3 +310,46 @@ nonrates %>%
 We see in the tables above that O Block holds a greater percentage of its crimes in battery and assault, more violent crimes, whereas we see a higher percentage of theft related crimes. The largest difference we see in these tables come in the `rate_per_100` column. This column shows how many instances of each crime occur per 100 people in the population. Here we see overall rates significantly higher in O Block than the rest of Chicago, especially in violent crimes. In O Block, we see that for every 100 people, there are 45.65 batteries, 16.15 assaults, and 0.70 homicides. Additionally, we see extremely high rates in criminal damage (15.80), and theft (12.75). Comparing the violent crimes to the rest of Chicago, in the rest of Chicago we see per 100 people only approximately 7.66 batteries, 3.80 assaults, and 0.13 homicides. Even theft, which has the highest rate in non O Block Chicago, still has a lower rate than O Block, with 9.13 thefts per 100 people, and criminal damage in third is less than a third of O Block's rate, at 4.89.
 
 Overall, we see significantly higher crime rates in O Block than the rest of Chicago. More specifically, we see even higher crime rate differences in violent crimes.
+<<<<<<< HEAD
+=======
+
+#### What are the most dangerous location types? Is there any change by year?
+
+```{r}
+crimes %>% 
+  drop_na(Location.Description) %>% 
+  group_by(Location.Description) %>% 
+  summarise(
+    count = n()
+  ) %>% 
+  arrange(desc(count)) %>% 
+  top_n(10, count) %>% 
+  ggplot(
+    aes(
+      x = count,
+      y = reorder(Location.Description, count),
+    )
+  ) + geom_col()
+```
+
+```{r}
+t10_by_year <- crimes %>% 
+  group_by(Year, Location.Description) %>% 
+  summarise(
+    count = n()
+  ) %>% 
+  arrange(desc(count)) %>% 
+  group_by(Year) %>% 
+  slice(1:5)
+
+t10_by_year %>% 
+  ggplot(
+    aes(
+      x = Year,
+      y = count,
+      colour = Location.Description
+    )
+  ) + geom_line() + theme_bw()
+```
+
+>>>>>>> 2de584b41c974aef9b01500fde0313688a7c262c

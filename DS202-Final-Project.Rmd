@@ -352,4 +352,90 @@ t10_by_year %>%
   ) + geom_line() + theme_bw()
 ```
 
+###What areas of Chicago produce the most crimes? Block? District?
+```{r}
+library(dplyr)
+library(ggplot2)
+
+
+# finding which blocks have the highest frequency of crime
+block_crime_summary <- crimes %>%
+  group_by(Block) %>%
+  summarize(Crime_Count = n()) %>%
+  arrange(desc(Crime_Count))
+
+
+# finding which districts have the highest frequency of crime
+district_crime_summary <- crimes %>%
+  group_by(District) %>%
+  summarize(Crime_Count = n()) %>%
+  arrange(desc(Crime_Count))
+
+
+# selecting top 10 blocks with highest crimes committed
+top_blocks <- block_crime_summary %>%
+  top_n(10, Crime_Count)
+```
+
+``` {r}
+# creating graph showing top 10 blocks with most crimes
+ggplot(top_blocks, aes(x = reorder(Block, -Crime_Count), y = Crime_Count)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  coord_flip() +
+  labs(title = "Top 10 Blocks with Most Crimes", x = "Block", y = "Crime Count") +
+  theme_minimal()
+```
+
+
+``` {r}
+# creating graph showing most to least crimes by disctrict
+ggplot(district_crime_summary, aes(x = reorder(District, -Crime_Count), y = Crime_Count)) +
+  geom_bar(stat = "identity", fill = "red") +
+  labs(title = "Crimes by District", x = "District", y = "Crime Count") +
+  theme_minimal()
+```
+###What are the most common environments for crime to take place?
+
+``` {r}
+library(dplyr)
+
+# find the top 20 locations by crime
+top_location_crimes <- crimes %>%
+  group_by(Location.Description) %>%
+  summarize(Crime_Count = n()) %>%
+  top_n(20, Crime_Count) %>%
+  arrange(desc(Crime_Count))
+
+library(ggplot2)
+
+# visualize the top 20 locatiosn by crime
+ggplot(top_location_crimes, aes(x = reorder(Location.Description, -Crime_Count), y = Crime_Count)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  coord_flip() +
+  labs(title = "Top 20 Locations with the Most Crimes", x = "Location", y = "Crime Count") +
+  theme_minimal()
+
+```
+##Interesting Find
+``` {r}
+# Load necessary library
+library(ggplot2)
+
+# find crime committed on a street grouped by block
+street_crimes <- crimes %>%
+  filter(Location.Description == "STREET") %>%
+  group_by(Block) %>%
+  summarize(Crime_Count = n()) %>%
+  top_n(20, Crime_Count) %>%
+  arrange(desc(Crime_Count))
+
+# plot the top 10 streets with the highest crime
+ggplot(street_crimes, aes(x = reorder(Block, -Crime_Count), y = Crime_Count)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  coord_flip() +
+  labs(title = "Top 20 Blocks with Most Street Crime", x = "Block", y = "Crime Count") +
+  theme_minimal()
+
+
+```
 >>>>>>> 2de584b41c974aef9b01500fde0313688a7c262c

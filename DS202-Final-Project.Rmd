@@ -31,6 +31,7 @@ Our primary dataset comes from the City of Chicago government open data portal, 
 * O Block is widely known as one of the most dangerous blocks in Chicago and the United States as a whole. How do O Block crime rates compare to the rest of Chicago?
 * What are the most dangerous location types? Is there any change by year?
 * What areas of Chicago hold the most arrests? Does this differ from the whole dataset?
+* What is the most common street crime? Which block has the most street crime?
 >>>>>>> 2de584b41c974aef9b01500fde0313688a7c262c
 
 -   What are the most committed crimes in Chicago? Which crimes lead to the most arrests? How many crimes are domestic versus non-domestic?
@@ -40,6 +41,7 @@ Our primary dataset comes from the City of Chicago government open data portal, 
 -   O Block is widely known as one of the most dangerous blocks in Chicago and the United States as a whole. How do O Block crime rates compare to the rest of Chicago?
 -   What are the top 10 most dangerous location types? Is there any change by year?
 -   What areas of Chicago hold the most arrests? Does this differ from the whole dataset?
+-   What is the most common street crime? Which block has the most street crime?
 
 ### Initial Data Cleaning Steps
 
@@ -375,9 +377,7 @@ district_crime_summary <- crimes %>%
 # selecting top 10 blocks with highest crimes committed
 top_blocks <- block_crime_summary %>%
   top_n(10, Crime_Count)
-```
 
-``` {r}
 # creating graph showing top 10 blocks with most crimes
 ggplot(top_blocks, aes(x = reorder(Block, -Crime_Count), y = Crime_Count)) +
   geom_bar(stat = "identity", fill = "blue") +
@@ -394,32 +394,29 @@ ggplot(district_crime_summary, aes(x = reorder(District, -Crime_Count), y = Crim
   labs(title = "Crimes by District", x = "District", y = "Crime Count") +
   theme_minimal()
 ```
-###What are the most common environments for crime to take place?
-
+###What is the most common street crime? Which block has the most street crime?
 ``` {r}
+
 library(dplyr)
-
-# find the top 20 locations by crime
-top_location_crimes <- crimes %>%
-  group_by(Location.Description) %>%
-  summarize(Crime_Count = n()) %>%
-  top_n(20, Crime_Count) %>%
-  arrange(desc(Crime_Count))
-
 library(ggplot2)
 
-# visualize the top 20 locatiosn by crime
-ggplot(top_location_crimes, aes(x = reorder(Location.Description, -Crime_Count), y = Crime_Count)) +
+# filter for street locations
+street_crime_summary <- crimes %>%
+  filter(Location.Description == "STREET") %>%
+  group_by(Primary.Type) %>%
+  summarize(Crime_Count = n()) %>%
+  top_n(10, Crime_Count) %>%
+  arrange(desc(Crime_Count))
+
+# plot the most common street crime
+ggplot(street_crime_summary, aes(x = reorder(Primary.Type, -Crime_Count), y = Crime_Count)) +
   geom_bar(stat = "identity", fill = "blue") +
   coord_flip() +
-  labs(title = "Top 20 Locations with the Most Crimes", x = "Location", y = "Crime Count") +
+  labs(title = "Top 10 Most Common Crime Types for STREET Locations", x = "Crime Type", y = "Crime Count") +
   theme_minimal()
 
 ```
-##Interesting Find
 ``` {r}
-# Load necessary library
-library(ggplot2)
 
 # find crime committed on a street grouped by block
 street_crimes <- crimes %>%
@@ -433,9 +430,10 @@ street_crimes <- crimes %>%
 ggplot(street_crimes, aes(x = reorder(Block, -Crime_Count), y = Crime_Count)) +
   geom_bar(stat = "identity", fill = "blue") +
   coord_flip() +
-  labs(title = "Top 20 Blocks with Most Street Crime", x = "Block", y = "Crime Count") +
+  labs(title = "Top 20 Blocks with the Most Street Crime", x = "Block", y = "Crime Count") +
   theme_minimal()
 
 
 ```
+
 >>>>>>> 2de584b41c974aef9b01500fde0313688a7c262c

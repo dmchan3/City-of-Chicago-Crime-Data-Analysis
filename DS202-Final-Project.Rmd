@@ -22,17 +22,6 @@ This project will analyze City of Chicago crime data to explore patterns and ins
 Our primary dataset comes from the City of Chicago government open data portal, containing records of reported crimes. The link to the full dataset (2001-Present) is <https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-Present/ijzp-q8t2/about_data> . For this project, we are using a subset of this dataset to focus on the last 5 years. CSV files for specific years, as we will be using, can be found on the site linked above by searching "Crimes - *Year*".
 
 ### Questions to be Addressed
-<<<<<<< HEAD
-=======
-* What are the most committed crimes in Chicago? Which crimes lead to the most arrests? How many crimes are domestic versus non-domestic?
-* Are there any seasonal crime patterns? Does quantity or types of crimes vary noticeably with changing of months and seasons? Time of day?
-* How was Chicago crime affected by COVID-19? Is there a noticeable difference in the quantity and/or types of crimes committed during COVID-19 times versus recent "normal" times?
-* What areas of Chicago produce the most crimes? Block? District?
-* O Block is widely known as one of the most dangerous blocks in Chicago and the United States as a whole. How do O Block crime rates compare to the rest of Chicago?
-* What are the most dangerous location types? Is there any change by year?
-* What areas of Chicago hold the most arrests? Does this differ from the whole dataset?
-* What is the most common street crime? Which block has the most street crime?
->>>>>>> 2de584b41c974aef9b01500fde0313688a7c262c
 
 -   What are the most committed crimes in Chicago? Which crimes lead to the most arrests? How many crimes are domestic versus non-domestic?
 -   Are there any seasonal crime patterns? Does quantity or types of crimes vary noticeably with changing of months and seasons? Time of day?
@@ -161,7 +150,7 @@ ArrestRates <- crimes %>%
   arrange(desc(ArrestRate))
 
 # Display top 10 crimes with the highest arrest rates
-top10 <- head(arrest_rates, 10)
+top10 <- head(ArrestRates, 10)
 print(top10)
 
 # Plot crimes with the highest arrest rates
@@ -377,6 +366,48 @@ print(head(crime_type_covid, 20))  # Display notable differences
 ```
 
 
+###What areas of Chicago produce the most crimes? Block? District?
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+
+# finding which blocks have the highest frequency of crime
+block_crime_summary <- crimes %>%
+  group_by(Block) %>%
+  summarize(Crime_Count = n()) %>%
+  arrange(desc(Crime_Count))
+
+
+# finding which districts have the highest frequency of crime
+district_crime_summary <- crimes %>%
+  group_by(District) %>%
+  summarize(Crime_Count = n()) %>%
+  arrange(desc(Crime_Count))
+
+
+# selecting top 10 blocks with highest crimes committed
+top_blocks <- block_crime_summary %>%
+  top_n(10, Crime_Count)
+
+# creating graph showing top 10 blocks with most crimes
+ggplot(top_blocks, aes(x = reorder(Block, -Crime_Count), y = Crime_Count)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  coord_flip() +
+  labs(title = "Top 10 Blocks with Most Crimes", x = "Block", y = "Crime Count") +
+  theme_minimal()
+```
+
+
+``` {r}
+# creating graph showing most to least crimes by disctrict
+ggplot(district_crime_summary, aes(x = reorder(District, -Crime_Count), y = Crime_Count)) +
+  geom_bar(stat = "identity", fill = "red") +
+  labs(title = "Crimes by District", x = "District", y = "Crime Count") +
+  theme_minimal()
+```
+
 
 #### O Block is widely known as one of the most dangerous blocks in Chicago and the United States as a whole. How do O Block crime rates compare to the rest of Chicago?
 
@@ -527,133 +558,6 @@ t5_by_year %>%
 In the graph above, we see that the same three categories; street, apartment, and residence, are year after year the top 3 without much challenge. Sidewalks come fourth year in and year out, sometimes narrowly. A surprise we see in this graph is the presence of small retail stores having the fifth highest crime counts in 2020. This comes as a shock as 2020 was COVID times, and on March 21, the state of Illinois announced a statewide Stay At Home Order. With this coming into effect after less than 3 months of the year, it comes at a great surprise that small retail stores would still come fifth in location based crime counts.
 
 
-```{r}
-# Load required libraries
-library(tidyverse)  # For data manipulation and visualization
-library(scales)     # For numeric formatting in plots
-
-# Define the years and file parts
-years <- 2020:2024
-file_parts <- c("_2.csv")  # Include only "_2.csv" for each year
-
-# Function to load and clean data
-load_and_clean <- function(year, part) {
-  # Dynamically construct the filename
-  file <- paste0(year, part)
-  
-  # Skip loading 2020_1.csv as per requirement
-  if (file == "2020_1.csv") {
-    return(NULL)  # Return NULL to exclude this file
-  }
-  
-  # Load the CSV file
-  data <- read.csv(file)
-  
-  # Ensure the 'Location.Description' column exists
-  if (!"Location.Description" %in% colnames(data)) {
-    stop(paste("Column 'Location.Description' not found in dataset:", file))
-  }
-  
-  # Filter out rows with missing values in 'Location.Description'
-  # and keep only the relevant column
-  data <- data %>%
-    filter(!is.na(Location.Description)) %>%  # Exclude rows with missing values
-    select(Location.Description)  # Keep only the 'Location.Description' column
-  
-  return(data)  # Return the cleaned data
-}
-
-# Load and combine data from all files except 2020_1.csv
-crime_data <- map_dfr(years, function(year) {
-  map_dfr(file_parts, function(part) {
-    load_and_clean(year, part)  # Apply the cleaning function to each file
-  })
-})
-
-# Count occurrences by 'Location.Description'
-locations_by_frequency <- crime_data %>%
-  group_by(Location.Description) %>%  # Group by location
-  summarize(
-    Total_Reports = n()  # Count the total number of reports for each location
-  ) %>%
-  arrange(desc(Total_Reports))  # Sort by total reports in descending order
-
-# Extract the top 10 locations with the most reports
-top_locations <- locations_by_frequency %>%
-  slice_max(order_by = Total_Reports, n = 10)  # Get the top 10 rows
-
-# Print the top 10 locations
-print("Top 10 Locations by Total Reports:")
-print(top_locations)
-
-# Visualization: Total reports by location (Top 10)
-ggplot(top_locations, aes(x = reorder(Location.Description, -Total_Reports), y = Total_Reports)) +
-  geom_bar(stat = "identity", fill = "steelblue") +  # Create a bar chart
-  scale_y_continuous(labels = scales::comma) +      # Format y-axis labels with commas
-  labs(
-    title = "Top 10 Locations by Total Reports",    # Title of the plot
-    x = "Location Description",                    # Label for x-axis
-    y = "Total Reports"                            # Label for y-axis
-  ) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for readability
-```
-
-**Libraries**: I loaded the tidyverse library for data manipulation and visualization, as well as scales to format y-axis labels in the plot.
-
-**File Loading**: I defined the years (2020–2024) and specified that only _2.csv files should be processed. I explicitly skipped 2020_1.csv within the load_and_clean function.
-
-**Data Cleaning**: I ensured that the Location.Description column exists, filtered out rows with missing values in this column, and kept only the Location.Description column for further analysis.
-
-**Data Aggregation**: I counted the total number of reports for each unique location and extracted the top 10 locations with the highest number of reports.
-
-**Visualization**: I created a bar chart of the top 10 locations, with bars ordered by the total number of reports. I rotated the x-axis labels for better readability.
-
-**Output**: I displayed the top 10 locations along with their respective counts and generated a visualization to clearly represent the data.
-
-
-
-###What areas of Chicago produce the most crimes? Block? District?
-```{r}
-library(dplyr)
-library(ggplot2)
-
-
-# finding which blocks have the highest frequency of crime
-block_crime_summary <- crimes %>%
-  group_by(Block) %>%
-  summarize(Crime_Count = n()) %>%
-  arrange(desc(Crime_Count))
-
-
-# finding which districts have the highest frequency of crime
-district_crime_summary <- crimes %>%
-  group_by(District) %>%
-  summarize(Crime_Count = n()) %>%
-  arrange(desc(Crime_Count))
-
-
-# selecting top 10 blocks with highest crimes committed
-top_blocks <- block_crime_summary %>%
-  top_n(10, Crime_Count)
-
-# creating graph showing top 10 blocks with most crimes
-ggplot(top_blocks, aes(x = reorder(Block, -Crime_Count), y = Crime_Count)) +
-  geom_bar(stat = "identity", fill = "blue") +
-  coord_flip() +
-  labs(title = "Top 10 Blocks with Most Crimes", x = "Block", y = "Crime Count") +
-  theme_minimal()
-```
-
-
-``` {r}
-# creating graph showing most to least crimes by disctrict
-ggplot(district_crime_summary, aes(x = reorder(District, -Crime_Count), y = Crime_Count)) +
-  geom_bar(stat = "identity", fill = "red") +
-  labs(title = "Crimes by District", x = "District", y = "Crime Count") +
-  theme_minimal()
-```
-
-
 ###What is the most common street crime? Which block has the most street crime?
 ``` {r}
 
@@ -696,4 +600,3 @@ ggplot(street_crimes, aes(x = reorder(Block, -Crime_Count), y = Crime_Count)) +
 
 ```
 
->>>>>>> 2de584b41c974aef9b01500fde0313688a7c262c

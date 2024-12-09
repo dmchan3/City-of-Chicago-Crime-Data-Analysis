@@ -231,7 +231,10 @@ print(head(crime_type_covid, 20))  # Display notable differences
 
 #### O Block is widely known as one of the most dangerous blocks in Chicago and the United States as a whole. How do O Block crime rates compare to the rest of Chicago?
 
+
+Firstly, we have to define what crimes happened in O Block. To do this, we looked at the coordinates at two corners of O Block in Google Maps to determine the longitude and latitude range of O Block.
 ```{r}
+# Filter O Block crimes
 oblock <- crimes %>% 
   filter(Latitude < 41.78037, Latitude > 41.774810, 
          Longitude > -87.617464, Longitude < -87.614991)
@@ -317,6 +320,7 @@ Overall, we see significantly higher crime rates in O Block than the rest of Chi
 
 #### What are the most dangerous location types? Is there any change by year?
 
+We will begin with looking at overall most dangerous location types by total count across all 5 years.
 ```{r}
 crimes %>% 
   drop_na(Location.Description) %>% 
@@ -336,6 +340,10 @@ crimes %>%
   xlab("Count (Thousands)") +
   ylab("Location Type") + theme_bw()
 ```
+
+This graph shows that the most crimes occur on/in streets, followed by apartments and overall residences. We see these three be significantly greater than all the other location types. 
+
+We will now look at a yearly breakdown of this question.
 
 ```{r}
 t5_by_year <- crimes %>% 
@@ -359,6 +367,8 @@ t5_by_year %>%
   xlab("Year") +
   ylab("Count")
 ```
+
+In the graph above, we see that the same three categories; street, apartment, and residence, are year after year the top 3 without much challenge. Sidewalks come fourth year in and year out, sometimes narrowly. A surprise we see in this graph is the presence of small retail stores having the fifth highest crime counts in 2020. This comes as a shock as 2020 was COVID times, and on March 21, the state of Illinois announced a statewide Stay At Home Order. With this coming into effect after less than 3 months of the year, it comes at a great surprise that small retail stores would still come fifth in location based crime counts.
 
 ###What areas of Chicago produce the most crimes? Block? District?
 ```{r}

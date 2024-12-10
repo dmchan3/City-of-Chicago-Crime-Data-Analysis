@@ -366,7 +366,7 @@ print(head(crime_type_covid, 20))  # Display notable differences
 ```
 
 
-###What areas of Chicago produce the most crimes? Block? District?
+#### What areas of Chicago produce the most crimes? Block? District?
 
 ```{r}
 library(dplyr)
@@ -499,8 +499,6 @@ nonrates %>%
 We see in the tables above that O Block holds a greater percentage of its crimes in battery and assault, more violent crimes, whereas we see a higher percentage of theft related crimes. The largest difference we see in these tables come in the `rate_per_100` column. This column shows how many instances of each crime occur per 100 people in the population. Here we see overall rates significantly higher in O Block than the rest of Chicago, especially in violent crimes. In O Block, we see that for every 100 people, there are 45.65 batteries, 16.15 assaults, and 0.70 homicides. Additionally, we see extremely high rates in criminal damage (15.80), and theft (12.75). Comparing the violent crimes to the rest of Chicago, in the rest of Chicago we see per 100 people only approximately 7.66 batteries, 3.80 assaults, and 0.13 homicides. Even theft, which has the highest rate in non O Block Chicago, still has a lower rate than O Block, with 9.13 thefts per 100 people, and criminal damage in third is less than a third of O Block's rate, at 4.89.
 
 Overall, we see significantly higher crime rates in O Block than the rest of Chicago. More specifically, we see even higher crime rate differences in violent crimes.
-<<<<<<< HEAD
-=======
 
 #### What are the most dangerous location types? Is there any change by year?
 
@@ -557,8 +555,141 @@ t5_by_year %>%
 
 In the graph above, we see that the same three categories; street, apartment, and residence, are year after year the top 3 without much challenge. Sidewalks come fourth year in and year out, sometimes narrowly. A surprise we see in this graph is the presence of small retail stores having the fifth highest crime counts in 2020. This comes as a shock as 2020 was COVID times, and on March 21, the state of Illinois announced a statewide Stay At Home Order. With this coming into effect after less than 3 months of the year, it comes at a great surprise that small retail stores would still come fifth in location based crime counts.
 
+#### What areas of Chicago hold the most arrests? Does this differ from the whole dataset?
 
-###What is the most common street crime? Which block has the most street crime?
+```{r}
+# Load required libraries
+library(tidyverse)  # For data manipulation and visualization
+library(scales)     # For numeric formatting in plots
+
+# Define years and file parts to process
+years <- 2020:2024
+file_parts <- c("_1.csv", "_2.csv")
+
+# Function to load and clean data
+load_and_clean <- function(year, part) {
+  file <- paste0(year, part)  # Construct file name
+  
+  if (file == "2020_1.csv") {  # Exclude 2020_1.csv
+    return(NULL)
+  }
+  
+  # Load data and handle errors
+  data <- tryCatch({
+    read.csv(file)
+  }, error = function(e) {
+    warning(paste("Could not load file:", file))
+    return(NULL)
+  })
+  
+  # Add placeholder columns if missing
+  if (!"Arrest" %in% colnames(data)) data$Arrest <- NA
+  if (!"District" %in% colnames(data)) data$District <- NA
+  
+  # Convert Arrest column to logical
+  data <- data %>%
+    mutate(
+      Arrest = case_when(
+        Arrest %in% c("TRUE", "true", "1") ~ TRUE,
+        Arrest %in% c("FALSE", "false", "0") ~ FALSE,
+        TRUE ~ NA
+      )
+    ) %>%
+    filter(!is.na(District) & !is.na(Arrest))  # Keep valid rows
+  
+  return(data)
+}
+
+# Combine data from all files
+crime_data <- map_dfr(years, function(year) {
+  map_dfr(file_parts, function(part) {
+    load_and_clean(year, part)
+  })
+})
+
+# Count arrests by District
+arrests_by_district <- crime_data %>%
+  filter(Arrest == TRUE) %>%  # Filter arrests only
+  group_by(District) %>%
+  summarize(Total_Arrests = n()) %>%  # Count arrests
+  arrange(desc(Total_Arrests))  # Sort by total arrests
+
+# Count total crimes by District
+total_crimes_by_district <- crime_data %>%
+  group_by(District) %>%
+  summarize(Total_Crimes = n())  # Count total crimes
+
+# Merge arrests and total crimes, calculate arrest rate
+district_comparison <- left_join(arrests_by_district, total_crimes_by_district, by = "District") %>%
+  mutate(Arrest_Rate = Total_Arrests / Total_Crimes)
+
+# Get top 10 districts with most arrests
+top_arrest_districts <- district_comparison %>%
+  slice_max(order_by = Total_Arrests, n = 10)
+
+# Print top 10 districts with most arrests
+print("Top 10 Districts with Most Arrests:")
+print(top_arrest_districts)
+
+# Plot: Total arrests by district
+ggplot(top_arrest_districts, aes(x = reorder(District, -Total_Arrests), y = Total_Arrests)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  scale_y_continuous(labels = scales::comma) +  # Format Y-axis
+  labs(
+    title = "Top 10 Districts with Most Arrests",
+    x = "District",
+    y = "Total Arrests"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Plot: Arrest rate by district
+ggplot(top_arrest_districts, aes(x = reorder(District, -Arrest_Rate), y = Arrest_Rate)) +
+  geom_bar(stat = "identity", fill = "darkgreen") +
+  scale_y_continuous(labels = scales::percent) +  # Show as percentage
+  labs(
+    title = "Top 10 Districts by Arrest Rate",
+    x = "District",
+    y = "Arrest Rate"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+I also did a comparison of arrests and non arrests based on the crimes and what the rates were.
+
+```{r}
+# Non_Arrest_Rate to the dataset
+top_arrest_districts <- top_arrest_districts %>%
+  mutate(Non_Arrest_Rate = 1 - Arrest_Rate)  # Calculate non-arrest rate
+
+# Reshape data for rate visualization
+rate_data <- top_arrest_districts %>%
+  pivot_longer(
+    cols = c(Arrest_Rate, Non_Arrest_Rate),  # Reshape Arrest_Rate and Non_Arrest_Rate
+    names_to = "Rate_Type",                  # New column to indicate the rate type
+    values_to = "Rate"                       # New column to hold the rate values
+  )
+
+# Visualization: Arrest and Non-Arrest Rates by District (Top 10)
+ggplot(rate_data, aes(x = reorder(District, -Rate), y = Rate, fill = Rate_Type)) +
+  geom_bar(stat = "identity", position = "dodge") +  # Side-by-side bars
+  scale_y_continuous(labels = scales::percent) +     # Show Y-axis as percentages
+  scale_fill_manual(
+    values = c("Arrest_Rate" = "steelblue", "Non_Arrest_Rate" = "orange"),  # Assign colors
+    labels = c("Arrest Rate", "Non-Arrest Rate"),                          # Legend labels
+    name = "Rate Type"                                                     # Legend title
+  ) +
+  labs(
+    title = "Arrest and Non-Arrest Rates by District (Top 10)",  # Chart title
+    x = "District",                                             # X-axis label
+    y = "Rate"                                                  # Y-axis label
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))      # Rotate X-axis labels
+```
+
+
+
+
+#### What is the most common street crime? Which block has the most street crime?
 ``` {r}
 
 library(dplyr)

@@ -433,7 +433,7 @@ ggplot(top_blocks, aes(x = reorder(Block, -Crime_Count), y = Crime_Count)) +
   labs(title = "Top 10 Blocks with Most Crimes", x = "Block", y = "Crime Count") +
   theme_minimal()
 ```
-
+By creating this graph, it is much easier to visually conclude which blocks have the highest amount of crime. 
 
 ``` {r}
 # finding which districts have the highest frequency of crime
@@ -449,7 +449,7 @@ ggplot(district_crime_summary, aes(x = reorder(District, -Crime_Count), y = Crim
   labs(title = "Crimes by District", x = "District", y = "Crime Count") +
   theme_minimal()
 ```
-
+From this graph it is easy to see which districts produce the most crime over the last few years.
 
 #### O Block is widely known as one of the most dangerous blocks in Chicago and the United States as a whole. How do O Block crime rates compare to the rest of Chicago?
 
@@ -753,6 +753,7 @@ ggplot(street_crime_summary, aes(x = reorder(Primary.Type, -Crime_Count), y = Cr
   theme_minimal()
 
 ```
+Here, it isn't too surprising that motor vehicle theft is the most common kind of crime for crimes committed within a street. It is somewhat surprising that over the last 4 years more cars were stolen than ordinary belonging, even if theft occurs within different locations.
 ``` {r}
 
 # find crime committed on a street grouped by block
@@ -772,4 +773,4 @@ ggplot(street_crimes, aes(x = reorder(Block, -Crime_Count), y = Crime_Count)) +
 
 
 ```
-
+Finally, as kind of a bonus we wanted to see which block had the most street crime. From the graph above, it is easy to tell that Martin Luther King JR DR has the most street crime. It is interesting that from highest crime count to lowest crime count there is a fast decline of crime count between the streets, but then relatively quickly the crime count becomes more or less the same for the blocks following. (For the top 20 at least)

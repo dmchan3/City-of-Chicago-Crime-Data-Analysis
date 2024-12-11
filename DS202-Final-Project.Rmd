@@ -344,7 +344,7 @@ crimes <- crimes %>%
 # Compare total crimes across periods
 crime_period_counts <- crimes %>%
   group_by(COVID_Period) %>%
-  summarise(Count = n())
+  summarise(Count = n(), .groups = "drop")
 
 print(crime_period_counts)
 
@@ -358,10 +358,53 @@ ggplot(crime_period_counts, aes(x = COVID_Period, y = Count, fill = COVID_Period
 crime_type_covid <- crimes %>%
   filter(COVID_Period %in% c("COVID-19", "Pre-COVID")) %>%
   group_by(COVID_Period, Primary.Type) %>%
-  summarise(Count = n()) %>%
+  summarise(Count = n(), .groups = "drop") %>%
   arrange(COVID_Period, desc(Count))
 
-print(head(crime_type_covid, 20))  # Display notable differences
+print(head(crime_type_covid, 20))
+
+# Prepare data for the final bar graph
+crime_type_diff <- crime_type_covid %>%
+  pivot_wider(names_from = COVID_Period, values_from = Count, values_fill = 0) %>%
+  mutate(Difference = `COVID-19` - `Pre-COVID`) %>%
+  arrange(desc(Difference)) %>%
+  slice(1:10)  # Select top 10 crime types with the largest difference
+
+print(crime_type_diff)
+
+# Bar plot showing the differences
+ggplot(crime_type_diff, aes(x = reorder(Primary.Type, Difference), y = Difference, fill = Difference > 0)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "Top 10 Crime Type Differences (COVID-19 vs Pre-COVID)", 
+       x = "Crime Type", y = "Difference (COVID-19 - Pre-COVID)") +
+  scale_fill_manual(values = c("TRUE" = "forestgreen", "FALSE" = "maroon"),
+                    labels = c("Increase", "Decrease")) +
+  theme_minimal()
+
+# Prepare data for the final bar graph
+crime_type_diff <- crime_type_covid %>%
+  pivot_wider(names_from = COVID_Period, values_from = Count, values_fill = 0) %>%
+  arrange(desc(`COVID-19`)) %>%
+  slice(1:10)  # Select top 10 crime types based on COVID-19 counts
+
+# Reshape data for side-by-side comparison
+crime_type_diff_long <- crime_type_diff %>%
+  pivot_longer(cols = c(`COVID-19`, `Pre-COVID`), names_to = "Time_Period", values_to = "Count")
+
+# Create side-by-side bar plot
+library(ggplot2)
+
+ggplot(crime_type_diff_long, aes(x = reorder(Primary.Type, Count), y = Count, fill = Time_Period)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  coord_flip() +
+  labs(title = "Crime Counts: COVID-19 vs. Pre-COVID",
+       x = "Crime Type", y = "Crime Count") +
+  scale_fill_manual(values = c("COVID-19" = "forestgreen", "Pre-COVID" = "maroon")) +
+  theme_minimal() +
+  theme(legend.title = element_blank())
+
+
 
 ```
 

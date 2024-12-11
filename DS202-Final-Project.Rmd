@@ -366,14 +366,6 @@ block_crime_summary <- crimes %>%
   summarize(Crime_Count = n()) %>%
   arrange(desc(Crime_Count))
 
-
-# finding which districts have the highest frequency of crime
-district_crime_summary <- crimes %>%
-  group_by(District) %>%
-  summarize(Crime_Count = n()) %>%
-  arrange(desc(Crime_Count))
-
-
 # selecting top 10 blocks with highest crimes committed
 top_blocks <- block_crime_summary %>%
   top_n(10, Crime_Count)
@@ -388,6 +380,13 @@ ggplot(top_blocks, aes(x = reorder(Block, -Crime_Count), y = Crime_Count)) +
 
 
 ``` {r}
+# finding which districts have the highest frequency of crime
+district_crime_summary <- crimes %>%
+  group_by(District) %>%
+  summarize(Crime_Count = n()) %>%
+  arrange(desc(Crime_Count))
+
+
 # creating graph showing most to least crimes by disctrict
 ggplot(district_crime_summary, aes(x = reorder(District, -Crime_Count), y = Crime_Count)) +
   geom_bar(stat = "identity", fill = "red") +

@@ -1,7 +1,7 @@
 ---
-title: "City of Chicago Crime Data Analysis Project Proposal"
+title: "City of Chicago Crime Data Analysis Project"
 date: "11-03-24"
-output: html_document
+output: github_document
 ---
 
 ## Research Topic

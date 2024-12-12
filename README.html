@@ -479,9 +479,663 @@ occurred</li>
 <div id="exploratory-data-analysis" class="section level3">
 <h3>Exploratory Data Analysis</h3>
 <p>Links to both the Rmd file (code) and HTML page for the Rmd file are
-linked below.</p>
-<p><a href="./DS202-Final-Project.Rmd">Link to code</a></p>
+below.</p>
 <p><a href="./DS202-Final-Project.html">Link to HTML with graphs</a></p>
+<p><a href="./DS202-Final-Project.Rmd">Link to Rmd code</a></p>
+<div id="what-are-the-most-committed-crimes-in-chicago-which-crimes-lead-to-the-most-arrests-how-many-crimes-are-domestic-versus-non-domestic" class="section level4">
+<h4>What are the most committed crimes in Chicago? Which crimes lead to
+the most arrests? How many crimes are domestic versus non-domestic?</h4>
+<p>-Firstly we identify the most frequently reported crimes in
+Chicago.</p>
+<pre class="r"><code># Count the frequency of each crime type
+crime_counts &lt;- crimes %&gt;%
+  group_by(Primary.Type) %&gt;%
+  summarise(Count = n()) %&gt;%
+  arrange(desc(Count))
+# Display top 10 most common crimes
+crime_counts_top10 &lt;- head(crime_counts, 10)
+print(crime_counts_top10)
+
+# Plot the top 10 crimes
+ggplot(crime_counts_top10, aes(x = reorder(Primary.Type, -Count), y = Count)) +
+  geom_bar(stat = &quot;identity&quot;, fill = &quot;steelblue&quot;) +
+  labs(title = &quot;Top 10 Most Committed Crimes in Chicago&quot;, x = &quot;Crime Type&quot;, y = &quot;Count&quot;) +
+  theme_minimal() +
+  coord_flip()
+</code></pre>
+<p>Theft is the most common crime, followed by battery and criminal
+damage.</p>
+<p>-Then identify which crimes have the highest arrest rates.</p>
+<pre class="r"><code># Calculate arrest rates by crime type
+ArrestRates &lt;- crimes %&gt;%
+  group_by(Primary.Type) %&gt;%
+  summarise(Total = n(), Arrests = sum(Arrest, na.rm = TRUE)) %&gt;%
+  mutate(ArrestRate = Arrests / Total * 100) %&gt;%
+  arrange(desc(ArrestRate))
+
+# Display top 10 crimes with the highest arrest rates
+top10 &lt;- head(ArrestRates, 10)
+print(top10)
+
+# Plot crimes with the highest arrest rates
+ggplot(top10, aes(x = reorder(Primary.Type, -ArrestRate), y = ArrestRate)) +
+  geom_bar(stat = &quot;identity&quot;, fill = &quot;skyblue&quot;) +
+  labs(title = &quot;Crimes with the Highest Arrest Rates&quot;, x = &quot;Crime Type&quot;, y = &quot;Arrest Rate (%)&quot;) +
+  theme_minimal() +
+  coord_flip()</code></pre>
+<p>Narcotics-related offenses lead in arrest rates, reflecting targeted
+policing. Violent crimes like homicide and robbery also show high arrest
+rates due to their severity and societal focus.</p>
+<p>Now Comparing the frequency of domestic versus non-domestic
+crimes.</p>
+<pre class="r"><code>library(dplyr)
+# Count domestic and non-domestic crimes
+DomesticCounts &lt;- crimes %&gt;%
+  group_by(Domestic) %&gt;%
+  summarise(Count = n())
+
+print(DomesticCounts)
+# Pie chart for domestic vs. non-domestic crimes
+ggplot(DomesticCounts, aes(x = &quot;&quot;, y = Count, fill = Domestic)) +
+  geom_bar(stat = &quot;identity&quot;, width = 1) +
+  coord_polar(&quot;y&quot;) +
+  labs(title = &quot;Proportion of Domestic vs. Non-Domestic Crimes&quot;, fill = &quot;Domestic&quot;) +
+  theme_void()</code></pre>
+<pre class="r"><code># Load required libraries
+library(tidyverse)  # For data manipulation and visualization
+library(lubridate)  # For working with dates and times
+library(ggplot2)    # For plotting
+library(scales)     # For numeric formatting in plots
+
+# List of years to process
+years &lt;- 2020:2024
+
+# Function to load and merge `_1` and `_2` files for a given year
+load_and_merge &lt;- function(year) {
+  file1 &lt;- paste0(year, &quot;_1.csv&quot;)
+  file2 &lt;- paste0(year, &quot;_2.csv&quot;)
+  
+  # Read the two parts of the data
+  data1 &lt;- read.csv(file1)
+  data2 &lt;- read.csv(file2)
+  
+  # Align column names dynamically
+  missing_in_data2 &lt;- setdiff(colnames(data1), colnames(data2))
+  missing_in_data1 &lt;- setdiff(colnames(data2), colnames(data1))
+  
+  # Add missing columns
+  if (length(missing_in_data2) &gt; 0) {
+    for (col in missing_in_data2) {
+      data2[[col]] &lt;- NA
+    }
+  }
+  if (length(missing_in_data1) &gt; 0) {
+    for (col in missing_in_data1) {
+      data1[[col]] &lt;- NA
+    }
+  }
+  
+  # Reorder columns in data2 to match data1
+  data2 &lt;- data2[colnames(data1)]
+  
+  # Merge the two datasets
+  merged_data &lt;- bind_rows(data1, data2)
+  
+  return(merged_data)
+}
+
+# Load and merge data for all years
+crime_data &lt;- map_dfr(years, load_and_merge)
+
+# Data Cleaning
+crime_data &lt;- crime_data %&gt;%
+  select(Date, Primary.Type, Location.Description, Arrest, Domestic, Latitude, Longitude) %&gt;%
+  mutate(Date = mdy_hms(Date)) %&gt;%  # Convert Date column to datetime
+  filter(!is.na(Date))  # Remove rows with invalid dates
+
+# Add time-related components
+crime_data &lt;- crime_data %&gt;%
+  mutate(
+    Month = month(Date, label = TRUE, abbr = TRUE),
+    Season = case_when(
+      Month %in% c(&quot;Dec&quot;, &quot;Jan&quot;, &quot;Feb&quot;) ~ &quot;Winter&quot;,
+      Month %in% c(&quot;Mar&quot;, &quot;Apr&quot;, &quot;May&quot;) ~ &quot;Spring&quot;,
+      Month %in% c(&quot;Jun&quot;, &quot;Jul&quot;, &quot;Aug&quot;) ~ &quot;Summer&quot;,
+      Month %in% c(&quot;Sep&quot;, &quot;Oct&quot;, &quot;Nov&quot;) ~ &quot;Fall&quot;
+    ),
+    Hour = hour(Date)
+  )
+
+# Analyze monthly crime patterns
+monthly_crime &lt;- crime_data %&gt;%
+  group_by(Month) %&gt;%
+  summarize(Crime_Count = n())
+
+# Analyze seasonal crime patterns
+seasonal_crime &lt;- crime_data %&gt;%
+  group_by(Season) %&gt;%
+  summarize(Crime_Count = n())
+
+# Analyze time-of-day crime patterns
+hourly_crime &lt;- crime_data %&gt;%
+  group_by(Hour) %&gt;%
+  summarize(Crime_Count = n())
+
+# Analyze types of crimes by season
+crime_types_by_season &lt;- crime_data %&gt;%
+  group_by(Season, Primary.Type) %&gt;%
+  summarize(Crime_Count = n()) %&gt;%
+  arrange(Season, desc(Crime_Count))
+
+# Visualizations
+
+# Monthly crime trends
+ggplot(monthly_crime, aes(x = Month, y = Crime_Count, group = 1)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    title = &quot;Monthly Crime Trends&quot;,
+    x = &quot;Month&quot;,
+    y = &quot;Crime Count&quot;
+  )
+
+# Seasonal crime patterns
+ggplot(seasonal_crime, aes(x = Season, y = Crime_Count, fill = Season)) +
+  geom_bar(stat = &quot;identity&quot;) +
+  scale_y_continuous(labels = scales::comma) +
+  labs(
+    title = &quot;Seasonal Crime Distribution&quot;,
+    x = &quot;Season&quot;,
+    y = &quot;Crime Count&quot;
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Hourly crime patterns
+ggplot(hourly_crime, aes(x = Hour, y = Crime_Count)) +
+  geom_line() +
+  labs(
+    title = &quot;Hourly Crime Trends&quot;,
+    x = &quot;Hour of Day&quot;,
+    y = &quot;Crime Count&quot;
+  )
+
+# Top crime types by season
+ggplot(crime_types_by_season, aes(x = Primary.Type, y = Crime_Count, fill = Season)) +
+  geom_bar(stat = &quot;identity&quot;, position = &quot;dodge&quot;) +
+  scale_y_continuous(labels = scales::comma) +
+  labs(
+    title = &quot;Top Crime Types by Season&quot;,
+    x = &quot;Crime Type&quot;,
+    y = &quot;Crime Count&quot;
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))</code></pre>
+<p><strong>Data Loading</strong>: I read crime data files for each year,
+handling files split into two parts while ensuring specific files, like
+2020_1.csv, are excluded as required.</p>
+<p><strong>Data Cleaning and Preprocessing</strong>: I addressed missing
+values, aligned column structures for consistency, and extracted
+time-related features such as months, seasons, and hours from the date
+information.</p>
+<p><strong>Analysis</strong>: I aggregated crime data to calculate
+counts by month, season, and hour of the day. I identified and ranked
+the most common crime types for each season.</p>
+<p><strong>Visualizations</strong>: I created clear and informative
+visualizations, including: Trends in crime counts by month, season, and
+hour. Comparisons of crime types by season using grouped bar charts.</p>
+</div>
+<div id="how-was-chicago-crime-affected-by-covid-19-is-there-a-noticeable-difference-in-the-quantity-andor-types-of-crimes-committed-during-covid-19-times-versus-recent-normal-times" class="section level4">
+<h4>How was Chicago crime affected by COVID-19? Is there a noticeable
+difference in the quantity and/or types of crimes committed during
+COVID-19 times versus recent “normal” times?</h4>
+<ul>
+<li>Analyzing crime trends during COVID-19 (March 2020–June 2021).</li>
+</ul>
+<pre class="r"><code># Define periods
+crimes &lt;- crimes %&gt;%
+  mutate(COVID_Period = case_when(
+    Date &gt;= ymd(&quot;2020-03-01&quot;) &amp; Date &lt;= ymd(&quot;2021-06-30&quot;) ~ &quot;COVID-19&quot;,
+    Date &gt; ymd(&quot;2021-06-30&quot;) ~ &quot;Post-COVID&quot;,
+    Date &lt; ymd(&quot;2020-03-01&quot;) ~ &quot;Pre-COVID&quot;
+  ))
+
+# Compare total crimes across periods
+crime_period_counts &lt;- crimes %&gt;%
+  group_by(COVID_Period) %&gt;%
+  summarise(Count = n(), .groups = &quot;drop&quot;)
+
+print(crime_period_counts)
+
+# Bar plot for crime counts across periods
+ggplot(crime_period_counts, aes(x = COVID_Period, y = Count, fill = COVID_Period)) +
+  geom_bar(stat = &quot;identity&quot;) +
+  labs(title = &quot;Crime Counts Across Periods&quot;, x = &quot;Period&quot;, y = &quot;Crime Count&quot;) +
+  theme_minimal()
+
+# Compare crime types during COVID-19
+crime_type_covid &lt;- crimes %&gt;%
+  filter(COVID_Period %in% c(&quot;COVID-19&quot;, &quot;Pre-COVID&quot;)) %&gt;%
+  group_by(COVID_Period, Primary.Type) %&gt;%
+  summarise(Count = n(), .groups = &quot;drop&quot;) %&gt;%
+  arrange(COVID_Period, desc(Count))
+
+print(head(crime_type_covid, 20))
+
+# Prepare data for the final bar graph
+crime_type_diff &lt;- crime_type_covid %&gt;%
+  pivot_wider(names_from = COVID_Period, values_from = Count, values_fill = 0) %&gt;%
+  mutate(Difference = `COVID-19` - `Pre-COVID`) %&gt;%
+  arrange(desc(Difference)) %&gt;%
+  slice(1:10)  # Select top 10 crime types with the largest difference
+
+print(crime_type_diff)
+
+# Bar plot showing the differences
+ggplot(crime_type_diff, aes(x = reorder(Primary.Type, Difference), y = Difference, fill = Difference &gt; 0)) +
+  geom_bar(stat = &quot;identity&quot;) +
+  coord_flip() +
+  labs(title = &quot;Top 10 Crime Type Differences (COVID-19 vs Pre-COVID)&quot;, 
+       x = &quot;Crime Type&quot;, y = &quot;Difference (COVID-19 - Pre-COVID)&quot;) +
+  scale_fill_manual(values = c(&quot;TRUE&quot; = &quot;forestgreen&quot;, &quot;FALSE&quot; = &quot;maroon&quot;),
+                    labels = c(&quot;Increase&quot;, &quot;Decrease&quot;)) +
+  theme_minimal()
+
+# Prepare data for the final bar graph
+crime_type_diff &lt;- crime_type_covid %&gt;%
+  pivot_wider(names_from = COVID_Period, values_from = Count, values_fill = 0) %&gt;%
+  arrange(desc(`COVID-19`)) %&gt;%
+  slice(1:10)  # Select top 10 crime types based on COVID-19 counts
+
+# Reshape data for side-by-side comparison
+crime_type_diff_long &lt;- crime_type_diff %&gt;%
+  pivot_longer(cols = c(`COVID-19`, `Pre-COVID`), names_to = &quot;Time_Period&quot;, values_to = &quot;Count&quot;)
+
+# Create side-by-side bar plot
+library(ggplot2)
+
+ggplot(crime_type_diff_long, aes(x = reorder(Primary.Type, Count), y = Count, fill = Time_Period)) +
+  geom_bar(stat = &quot;identity&quot;, position = &quot;dodge&quot;) +
+  coord_flip() +
+  labs(title = &quot;Crime Counts: COVID-19 vs. Pre-COVID&quot;,
+       x = &quot;Crime Type&quot;, y = &quot;Crime Count&quot;) +
+  scale_fill_manual(values = c(&quot;COVID-19&quot; = &quot;forestgreen&quot;, &quot;Pre-COVID&quot; = &quot;maroon&quot;)) +
+  theme_minimal() +
+  theme(legend.title = element_blank())
+
+
+</code></pre>
+</div>
+<div id="what-areas-of-chicago-produce-the-most-crimes-block-district" class="section level4">
+<h4>What areas of Chicago produce the most crimes? Block? District?</h4>
+<pre class="r"><code>library(dplyr)
+library(ggplot2)
+
+
+# finding which blocks have the highest frequency of crime
+block_crime_summary &lt;- crimes %&gt;%
+  group_by(Block) %&gt;%
+  summarize(Crime_Count = n()) %&gt;%
+  arrange(desc(Crime_Count))
+
+# selecting top 10 blocks with highest crimes committed
+top_blocks &lt;- block_crime_summary %&gt;%
+  top_n(10, Crime_Count)
+
+# creating graph showing top 10 blocks with most crimes
+ggplot(top_blocks, aes(x = reorder(Block, -Crime_Count), y = Crime_Count)) +
+  geom_bar(stat = &quot;identity&quot;, fill = &quot;blue&quot;) +
+  coord_flip() +
+  labs(title = &quot;Top 10 Blocks with Most Crimes&quot;, x = &quot;Block&quot;, y = &quot;Crime Count&quot;) +
+  theme_minimal()</code></pre>
+<p>By creating this graph, it is much easier to visually conclude which
+blocks have the highest amount of crime.</p>
+<pre class="r"><code># finding which districts have the highest frequency of crime
+district_crime_summary &lt;- crimes %&gt;%
+  group_by(District) %&gt;%
+  summarize(Crime_Count = n()) %&gt;%
+  arrange(desc(Crime_Count))
+
+
+# creating graph showing most to least crimes by disctrict
+ggplot(district_crime_summary, aes(x = reorder(District, -Crime_Count), y = Crime_Count)) +
+  geom_bar(stat = &quot;identity&quot;, fill = &quot;red&quot;) +
+  labs(title = &quot;Crimes by District&quot;, x = &quot;District&quot;, y = &quot;Crime Count&quot;) +
+  theme_minimal()</code></pre>
+<p>From this graph it is easy to see which districts produce the most
+crime over the last few years.</p>
+</div>
+<div id="o-block-is-widely-known-as-one-of-the-most-dangerous-blocks-in-chicago-and-the-united-states-as-a-whole.-how-do-o-block-crime-rates-compare-to-the-rest-of-chicago" class="section level4">
+<h4>O Block is widely known as one of the most dangerous blocks in
+Chicago and the United States as a whole. How do O Block crime rates
+compare to the rest of Chicago?</h4>
+<p>Firstly, we have to define what crimes happened in O Block. To do
+this, we looked at the coordinates at two corners of O Block in Google
+Maps to determine the longitude and latitude range of O Block.</p>
+<pre class="r"><code># Filter O Block crimes
+oblock &lt;- crimes %&gt;% 
+  filter(Latitude &lt; 41.78037, Latitude &gt; 41.774810, 
+         Longitude &gt; -87.617464, Longitude &lt; -87.614991)
+
+# Make dataset for rest of Chicago (whole dataset - O Block dataset)
+non_oblock &lt;- crimes %&gt;% 
+  anti_join(oblock)</code></pre>
+<p>We will first begin with an overall analysis of O Block crimes.</p>
+<pre class="r"><code>#O Block is stated to have a capacity of 2,000 people
+oblock_population = 2000
+
+# Create a table of the crime counts, percentages of total crimes, and rate per 100 people for the O Block data
+obrates &lt;- oblock %&gt;% 
+  group_by(Primary.Type) %&gt;% 
+  summarise(
+    n = n(),
+    percent = n() / nrow(oblock) * 100,
+    rate_per_100 = n() / oblock_population * 100
+  ) %&gt;% 
+  arrange(desc(n))
+
+obrates</code></pre>
+<pre class="r"><code># Create a bar chart visualization for the rate per 100 people column of the above table
+obrates %&gt;% 
+  ggplot(
+    aes(
+      x = reorder(Primary.Type, rate_per_100), 
+      y = rate_per_100
+    )
+  ) + 
+  geom_col(fill = &quot;red&quot;) +
+  coord_flip() +
+  ggtitle(&quot;O Block Crime Rates&quot;) +
+  xlab(&quot;Crime&quot;) +
+  ylab(&quot;Rate Per 100 People&quot;) + theme_bw()</code></pre>
+<p>Now we will look at the same analysis of non O Block crimes.</p>
+<pre class="r"><code># The city of Chicago is listed to have a population of 2.664 million, however that includes O Block
+non_oblock_population = 2664000 - oblock_population
+
+# Create a table of the crime counts, percentages of total crimes, and rate per 100 people for the non-O Block data
+nonrates &lt;- non_oblock %&gt;% 
+  group_by(Primary.Type) %&gt;% 
+  summarise(
+    n = n(),
+    percent = n() / nrow(non_oblock) * 100,
+    rate_per_100 = n() / non_oblock_population * 100
+  ) %&gt;% 
+  arrange(desc(n))
+
+nonrates</code></pre>
+<pre class="r"><code># Create a bar chart visualization for the  crime rates per 100 people of the above table
+nonrates %&gt;% 
+  filter(
+    rate_per_100 &gt; .01
+  ) %&gt;% 
+  ggplot(
+    aes(
+      x = reorder(Primary.Type, rate_per_100), 
+      y = rate_per_100
+    )
+  ) + 
+  geom_col(fill = &quot;red&quot;) +
+  coord_flip() +
+  ggtitle(&quot;Rest of Chicago Crime Rates&quot;) +
+  xlab(&quot;Crime&quot;) +
+  ylab(&quot;Rate Per 100 People&quot;) + theme_bw()</code></pre>
+<p>We see in the tables above that O Block holds a greater percentage of
+its crimes in battery and assault, more violent crimes, whereas we see a
+higher percentage of theft related crimes. The largest difference we see
+in these tables come in the <code>rate_per_100</code> column. This
+column shows how many instances of each crime occur per 100 people in
+the population. Here we see overall rates significantly higher in O
+Block than the rest of Chicago, especially in violent crimes. In O
+Block, we see that for every 100 people, there are 45.65 batteries,
+16.15 assaults, and 0.70 homicides. Additionally, we see extremely high
+rates in criminal damage (15.80), and theft (12.75). Comparing the
+violent crimes to the rest of Chicago, in the rest of Chicago we see per
+100 people only approximately 7.66 batteries, 3.80 assaults, and 0.13
+homicides. Even theft, which has the highest rate in non O Block
+Chicago, still has a lower rate than O Block, with 9.13 thefts per 100
+people, and criminal damage in third is less than a third of O Block’s
+rate, at 4.89.</p>
+<p>Overall, we see significantly higher crime rates in O Block than the
+rest of Chicago. More specifically, we see even higher crime rate
+differences in violent crimes.</p>
+</div>
+<div id="what-are-the-most-dangerous-location-types-is-there-any-change-by-year" class="section level4">
+<h4>What are the most dangerous location types? Is there any change by
+year?</h4>
+<p>We will begin with looking at overall most dangerous location types
+by total count across all 5 years.</p>
+<pre class="r"><code># Gets and visualizes the top 10 location types with the most total crime across the whole dataset.
+crimes %&gt;% 
+  drop_na(Location.Description) %&gt;% 
+  group_by(Location.Description) %&gt;% 
+  summarise(
+    count = n()
+  ) %&gt;% 
+  arrange(desc(count)) %&gt;% 
+  top_n(10, count) %&gt;% 
+  ggplot(
+    aes(
+      x = count / 1000,
+      y = reorder(Location.Description, count),
+    )
+  ) + geom_col(fill = &quot;skyblue&quot;) +
+  ggtitle(&quot;Most Dangerous Overall Location Types&quot;) +
+  xlab(&quot;Count (Thousands)&quot;) +
+  ylab(&quot;Location Type&quot;) + theme_bw()</code></pre>
+<p>This graph shows that the most crimes occur on/in streets, followed
+by apartments and overall residences. We see these three be
+significantly greater than all the other location types.</p>
+<p>We will now look at a yearly breakdown of this question.</p>
+<pre class="r"><code># Table of top 5 location descriptions with the most crimes committed by year
+t5_by_year &lt;- crimes %&gt;% 
+  group_by(Year, Location.Description) %&gt;% 
+  summarise(
+    count = n()
+  ) %&gt;% 
+  arrange(desc(count)) %&gt;% 
+  group_by(Year) %&gt;% 
+  slice(1:5)
+
+# Creating a line + scatterplot plot visualizing the above table
+t5_by_year %&gt;% 
+  ggplot(
+    aes(
+      x = Year,
+      y = count,
+      colour = Location.Description
+    )
+  ) + geom_line() + geom_point() + theme_bw() +
+  ggtitle(&quot;Location Types With Highest Crime Counts By Year&quot;) +
+  xlab(&quot;Year&quot;) +
+  ylab(&quot;Count&quot;)</code></pre>
+<p>In the graph above, we see that the same three categories; street,
+apartment, and residence, are year after year the top 3 without much
+challenge. Sidewalks come fourth year in and year out, sometimes
+narrowly. A surprise we see in this graph is the presence of small
+retail stores having the fifth highest crime counts in 2020. This comes
+as a shock as 2020 was COVID times, and on March 21, the state of
+Illinois announced a statewide Stay At Home Order. With this coming into
+effect after less than 3 months of the year, it comes at a great
+surprise that small retail stores would still come fifth in location
+based crime counts.</p>
+</div>
+<div id="what-areas-of-chicago-hold-the-most-arrests-does-this-differ-from-the-whole-dataset" class="section level4">
+<h4>What areas of Chicago hold the most arrests? Does this differ from
+the whole dataset?</h4>
+<pre class="r"><code># Load required libraries
+library(tidyverse)  # For data manipulation and visualization
+library(scales)     # For numeric formatting in plots
+
+# Define years and file parts to process
+years &lt;- 2020:2024
+file_parts &lt;- c(&quot;_1.csv&quot;, &quot;_2.csv&quot;)
+
+# Function to load and clean data
+load_and_clean &lt;- function(year, part) {
+  file &lt;- paste0(year, part)  # Construct file name
+  
+  if (file == &quot;2020_1.csv&quot;) {  # Exclude 2020_1.csv
+    return(NULL)
+  }
+  
+  # Load data and handle errors
+  data &lt;- tryCatch({
+    read.csv(file)
+  }, error = function(e) {
+    warning(paste(&quot;Could not load file:&quot;, file))
+    return(NULL)
+  })
+  
+  # Add placeholder columns if missing
+  if (!&quot;Arrest&quot; %in% colnames(data)) data$Arrest &lt;- NA
+  if (!&quot;District&quot; %in% colnames(data)) data$District &lt;- NA
+  
+  # Convert Arrest column to logical
+  data &lt;- data %&gt;%
+    mutate(
+      Arrest = case_when(
+        Arrest %in% c(&quot;TRUE&quot;, &quot;true&quot;, &quot;1&quot;) ~ TRUE,
+        Arrest %in% c(&quot;FALSE&quot;, &quot;false&quot;, &quot;0&quot;) ~ FALSE,
+        TRUE ~ NA
+      )
+    ) %&gt;%
+    filter(!is.na(District) &amp; !is.na(Arrest))  # Keep valid rows
+  
+  return(data)
+}
+
+# Combine data from all files
+crime_data &lt;- map_dfr(years, function(year) {
+  map_dfr(file_parts, function(part) {
+    load_and_clean(year, part)
+  })
+})
+
+# Count arrests by District
+arrests_by_district &lt;- crime_data %&gt;%
+  filter(Arrest == TRUE) %&gt;%  # Filter arrests only
+  group_by(District) %&gt;%
+  summarize(Total_Arrests = n()) %&gt;%  # Count arrests
+  arrange(desc(Total_Arrests))  # Sort by total arrests
+
+# Count total crimes by District
+total_crimes_by_district &lt;- crime_data %&gt;%
+  group_by(District) %&gt;%
+  summarize(Total_Crimes = n())  # Count total crimes
+
+# Merge arrests and total crimes, calculate arrest rate
+district_comparison &lt;- left_join(arrests_by_district, total_crimes_by_district, by = &quot;District&quot;) %&gt;%
+  mutate(Arrest_Rate = Total_Arrests / Total_Crimes)
+
+# Get top 10 districts with most arrests
+top_arrest_districts &lt;- district_comparison %&gt;%
+  slice_max(order_by = Total_Arrests, n = 10)
+
+# Print top 10 districts with most arrests
+print(&quot;Top 10 Districts with Most Arrests:&quot;)
+print(top_arrest_districts)
+
+# Plot: Total arrests by district
+ggplot(top_arrest_districts, aes(x = reorder(District, -Total_Arrests), y = Total_Arrests)) +
+  geom_bar(stat = &quot;identity&quot;, fill = &quot;steelblue&quot;) +
+  scale_y_continuous(labels = scales::comma) +  # Format Y-axis
+  labs(
+    title = &quot;Top 10 Districts with Most Arrests&quot;,
+    x = &quot;District&quot;,
+    y = &quot;Total Arrests&quot;
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Plot: Arrest rate by district
+ggplot(top_arrest_districts, aes(x = reorder(District, -Arrest_Rate), y = Arrest_Rate)) +
+  geom_bar(stat = &quot;identity&quot;, fill = &quot;darkgreen&quot;) +
+  scale_y_continuous(labels = scales::percent) +  # Show as percentage
+  labs(
+    title = &quot;Top 10 Districts by Arrest Rate&quot;,
+    x = &quot;District&quot;,
+    y = &quot;Arrest Rate&quot;
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))</code></pre>
+<p>I also did a comparison of arrests and non arrests based on the
+crimes and what the rates were.</p>
+<pre class="r"><code># Non_Arrest_Rate to the dataset
+top_arrest_districts &lt;- top_arrest_districts %&gt;%
+  mutate(Non_Arrest_Rate = 1 - Arrest_Rate)  # Calculate non-arrest rate
+
+# Reshape data for rate visualization
+rate_data &lt;- top_arrest_districts %&gt;%
+  pivot_longer(
+    cols = c(Arrest_Rate, Non_Arrest_Rate),  # Reshape Arrest_Rate and Non_Arrest_Rate
+    names_to = &quot;Rate_Type&quot;,                  # New column to indicate the rate type
+    values_to = &quot;Rate&quot;                       # New column to hold the rate values
+  )
+
+# Visualization: Arrest and Non-Arrest Rates by District (Top 10)
+ggplot(rate_data, aes(x = reorder(District, -Rate), y = Rate, fill = Rate_Type)) +
+  geom_bar(stat = &quot;identity&quot;, position = &quot;dodge&quot;) +  # Side-by-side bars
+  scale_y_continuous(labels = scales::percent) +     # Show Y-axis as percentages
+  scale_fill_manual(
+    values = c(&quot;Arrest_Rate&quot; = &quot;steelblue&quot;, &quot;Non_Arrest_Rate&quot; = &quot;orange&quot;),  # Assign colors
+    labels = c(&quot;Arrest Rate&quot;, &quot;Non-Arrest Rate&quot;),                          # Legend labels
+    name = &quot;Rate Type&quot;                                                     # Legend title
+  ) +
+  labs(
+    title = &quot;Arrest and Non-Arrest Rates by District (Top 10)&quot;,  # Chart title
+    x = &quot;District&quot;,                                             # X-axis label
+    y = &quot;Rate&quot;                                                  # Y-axis label
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))      # Rotate X-axis labels</code></pre>
+</div>
+<div id="what-is-the-most-common-street-crime-which-block-has-the-most-street-crime" class="section level4">
+<h4>What is the most common street crime? Which block has the most
+street crime?</h4>
+<pre class="r"><code>
+library(dplyr)
+library(ggplot2)
+
+# filter for street locations
+street_crime_summary &lt;- crimes %&gt;%
+  filter(Location.Description == &quot;STREET&quot;) %&gt;%
+  group_by(Primary.Type) %&gt;%
+  summarize(Crime_Count = n()) %&gt;%
+  top_n(10, Crime_Count) %&gt;%
+  arrange(desc(Crime_Count))
+
+# plot the most common street crime
+ggplot(street_crime_summary, aes(x = reorder(Primary.Type, -Crime_Count), y = Crime_Count)) +
+  geom_bar(stat = &quot;identity&quot;, fill = &quot;blue&quot;) +
+  coord_flip() +
+  labs(title = &quot;Top 10 Most Common Crime Types for STREET Locations&quot;, x = &quot;Crime Type&quot;, y = &quot;Crime Count&quot;) +
+  theme_minimal()
+</code></pre>
+<p>Here, it isn’t too surprising that motor vehicle theft is the most
+common kind of crime for crimes committed within a street. It is
+somewhat surprising that over the last 4 years more cars were stolen
+than ordinary belonging, even if theft occurs within different
+locations.</p>
+<pre class="r"><code>
+# find crime committed on a street grouped by block
+street_crimes &lt;- crimes %&gt;%
+  filter(Location.Description == &quot;STREET&quot;) %&gt;%
+  group_by(Block) %&gt;%
+  summarize(Crime_Count = n()) %&gt;%
+  top_n(20, Crime_Count) %&gt;%
+  arrange(desc(Crime_Count))
+
+# plot the top 10 streets with the highest crime
+ggplot(street_crimes, aes(x = reorder(Block, -Crime_Count), y = Crime_Count)) +
+  geom_bar(stat = &quot;identity&quot;, fill = &quot;blue&quot;) +
+  coord_flip() +
+  labs(title = &quot;Top 20 Blocks with the Most Street Crime&quot;, x = &quot;Block&quot;, y = &quot;Crime Count&quot;) +
+  theme_minimal()
+
+</code></pre>
+<p>Finally, as kind of a bonus we wanted to see which block had the most
+street crime. From the graph above, it is easy to tell that Martin
+Luther King JR DR has the most street crime. It is interesting that from
+highest crime count to lowest crime count there is a fast decline of
+crime count between the streets, but then relatively quickly the crime
+count becomes more or less the same for the blocks following. (For the
+top 20 at least)</p>
+</div>
 </div>
 </div>
 </div>

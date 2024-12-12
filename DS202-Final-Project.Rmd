@@ -773,4 +773,5 @@ ggplot(street_crimes, aes(x = reorder(Block, -Crime_Count), y = Crime_Count)) +
 
 
 ```
+
 Finally, as kind of a bonus we wanted to see which block had the most street crime. From the graph above, it is easy to tell that Martin Luther King JR DR has the most street crime. It is interesting that from highest crime count to lowest crime count there is a fast decline of crime count between the streets, but then relatively quickly the crime count becomes more or less the same for the blocks following. (For the top 20 at least)

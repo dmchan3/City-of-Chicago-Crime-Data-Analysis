@@ -91,3 +91,11 @@ This showed us a few incidents do not have a recorded `Ward`, and although a sma
 * **Year**: The year of the incident
 * **Latitude**: Latitude of the incident location
 * **Longitude**: Longitude of the incident location
+
+### Exploratory Data Analysis
+
+Links to both the Rmd file (code) and HTML page for the Rmd file are below.
+
+[Link to HTML with graphs](./DS202-Final-Project.html)
+
+[Link to Rmd code](./DS202-Final-Project.Rmd)
